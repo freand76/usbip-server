@@ -1,6 +1,7 @@
 #include <wx/wx.h>
 #include <stdio.h>
 #include <signal.h>
+#include <linux/usb/ch9.h>
 
 #include "UsbDevice.h"
 #include "UsbConfiguration.h"
@@ -49,8 +50,7 @@ int Test::OnRun() {
     }
     wxPrintf("\n");
     
-    test.AddDevice(&dev, "My First Virtual Device", "1-1", 2, 3, 1);
-
+    test.AddDevice(&dev, "My First Virtual Device", "1-1", 2, 3, USB_SPEED_HIGH);
     bool res = test.StartServer();
     wxPrintf("Res = %d\n", int(res));
 
