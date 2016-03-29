@@ -201,7 +201,7 @@ static int FillDeviceData(UsbDeviceItem* item, unsigned char* buffer, int offset
     pos += SetUint(item->d->bDeviceProtocol, buffer, pos, 1); /* */
     pos += SetUint(item->d->bConfigurationValue, buffer, pos, 1); /* */
     pos += SetUint(item->d->bNumConfigurations, buffer, pos, 1); /* */
-    pos += SetUint(item->d->bNumInterfaces, buffer, pos, 1); /* */
+    pos += SetUint(item->d->configurationArray[0]->bNumInterfaces, buffer, pos, 1); /* */
 
     return pos - offset;
 }

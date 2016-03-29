@@ -4,6 +4,10 @@ SRC_FILES = \
 	Test.cc \
 	UsbIpServer.cc \
 	UsbDevice.cc \
+	UsbConfiguration.cc \
+	UsbInterface.cc \
+	UsbEndpoint.cc \
+	UsbUtil.cc \
 	NetworkUtil.cc
 
 CPP=g++

@@ -2,6 +2,7 @@
 #define USB_DEVICE_H
 
 #include <stdint.h>
+#include "UsbConfiguration.h"
 
 class UsbDevice {
 public:
@@ -10,7 +11,9 @@ public:
               uint16_t bcdDevice,
               uint8_t bDeviceClass,
               uint8_t bDeviceSubClass,
-              uint8_t bDeviceProtocol);
+              uint8_t bDeviceProtocol,
+              uint8_t bNumConfigurations,
+              UsbConfiguration** configurationArray);
 
     int TxRx(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
     int OutRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
@@ -25,7 +28,7 @@ public:
     uint8_t bDeviceProtocol;
     uint8_t bConfigurationValue;
     uint8_t bNumConfigurations;
-    uint8_t bNumInterfaces;
+    UsbConfiguration** configurationArray;
 };
 
 #endif // USB_DEVICE_H
