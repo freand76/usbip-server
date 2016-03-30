@@ -19,7 +19,6 @@
 #include <string.h>
 
 #include <cstdio>
-#include <thread>
 
 #include "Verbose.h"
 #include "UsbIpServer.h"
@@ -38,11 +37,17 @@ UsbIpServer::UsbIpServer(int tcpPort) {
     this->serverWorkerActive = false;
     this->killServerWorker = false;
     this->activeClients = 0;
+    this->serverThread = NULL;
 }
 
 UsbIpServer::~UsbIpServer() {
     if (serverSocketFd >= 0) {
 	close(serverSocketFd);
+    }
+
+    for (unsigned int idx = 0; idx < connectionThreads.size(); idx++) {
+	connectionThreads[idx]->join();
+	delete connectionThreads[idx];
     }
 }
 
@@ -93,8 +98,8 @@ bool UsbIpServer::Init() {
 }
 
 bool UsbIpServer::StartServer() {
-    std::thread* server = new std::thread(&UsbIpServer::ServerWorker, this);
-    if (server == NULL) {
+    serverThread = new std::thread(&UsbIpServer::ServerWorker, this);
+    if (serverThread == NULL) {
 	return false;
     }
 
@@ -114,8 +119,11 @@ void UsbIpServer::StopServer() {
 		INFO("Active socket clients %d", activeClients);
 		oldActioveClients = activeClients;
 	    }
-	    milliSleep(1000);
+	    milliSleep(500);
 	}
+	serverThread->join();
+	delete serverThread;
+	serverThread = NULL;
     } else {
 	ERROR("Cannot stop inactive server...");
     }
@@ -144,10 +152,12 @@ void UsbIpServer::ServerWorker() {
 }
 
 bool UsbIpServer::StartConnectionThread(int clientSocketFd) {
-    std::thread* connection = new std::thread(&UsbIpServer::ConnectionWorker, this, clientSocketFd);
-    if (connection == NULL) {
+    std::thread* connectionThread = new std::thread(&UsbIpServer::ConnectionWorker, this, clientSocketFd);
+    if (connectionThread == NULL) {
 	return false;
     }
+
+    connectionThreads.push_back(connectionThread);
     return true;
 }
 

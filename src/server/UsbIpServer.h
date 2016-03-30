@@ -16,6 +16,8 @@
 #define USB_IP_DRIVER_H
 
 #include <string>
+#include <thread>
+#include <vector>
 #include <unistd.h>
 
 #include "UsbDevice.h"
@@ -40,6 +42,8 @@ private:
     void UspIpReplyImport(int clientSocketFd, unsigned char* buffer, int len);
     void UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int len);
 
+    std::thread* serverThread;
+    std::vector<std::thread*> connectionThreads;
 
     int serverSocketFd;
     bool serverWorkerActive;
