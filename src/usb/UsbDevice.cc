@@ -1,8 +1,9 @@
 #include "UsbDevice.h"
 #include "UsbInterface.h"
 #include "UsbUtil.h"
-#include <wx/wx.h>
+#include "Verbose.h"
 
+using namespace Verbose;
 using namespace UsbUtil;
 
 UsbDevice::UsbDevice(uint16_t idVendor,
@@ -25,31 +26,29 @@ UsbDevice::UsbDevice(uint16_t idVendor,
 
 int UsbDevice::TxRx(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength) {
     int direction = (setup[0] & 0x80) >> 7;
- 
+
     if (direction == 1) {
-	wxPrintf("Out\n");
 	return OutRequest(setup, data, replyBuffer, bufLength);
     } else {
-	wxPrintf("In\n");
 	return InRequest(setup, data, replyBuffer, bufLength);
     }
 }
 
 int UsbDevice::OutRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength) {
+    INFO("UsbDevice: OutRequest");
     //int type = (setup[0] & 0x60) >> 5;
     int recipient = setup[0] & 0x05;
-    
+
     if (recipient == 0) {
-	wxPrintf("Device\n");
 	return DeviceRequest(setup, data, replyBuffer, bufLength);
     } else {
-	wxPrintf("Out Recipient %d\n", recipient); 
+	ERROR("UsbDevice: Out Recipient %d", recipient);
     }
     return 0;
 }
 
 int UsbDevice::InRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength) {
-    (void)setup;
+    INFO("UsbDevice: InRequest");
     (void)data;
     (void)replyBuffer;
     (void)bufLength;
@@ -59,10 +58,10 @@ int UsbDevice::InRequest(unsigned char* setup, unsigned char* data, unsigned cha
 
     switch(bRequest) {
     case 0x09:
-	wxPrintf("Set Configuration: %d\n", reqIndex);
+	INFO("UsbDevice: Set Configuration: %d", reqIndex);
 	break;
     }
-    
+
     return 0;
 }
 
@@ -73,7 +72,7 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
     int bRequest = setup[1];
     int reqIndex =  (setup[2] << 8) | setup[3];
     int pos = 0;
-    
+
     switch(bRequest) {
     case 0x06:
 	switch(reqIndex) {
@@ -95,7 +94,7 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
 	    replyBuffer[14] = 0;
 	    replyBuffer[15] = 0;
 	    replyBuffer[16] = 0;
-	    replyBuffer[17] = bNumConfigurations; 
+	    replyBuffer[17] = bNumConfigurations;
 	    packetSize = 18;
 	    break;
 	case 0x0002:
@@ -108,7 +107,6 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
 	    for (int idx = 0; idx < bNumConfigurations; idx++) {
 		pos += configurationArray[idx]->GenerateDescriptor(replyBuffer, pos);
 	    }
-	    wxPrintf("ConfigSize = %d\n", pos);
 	    packetSize = pos;
 	    break;
 	default:
@@ -120,7 +118,7 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
 
     if (packetSize > bufLength) {
 	packetSize = bufLength;
-	wxPrintf("Trunc package: %d\n", packetSize); 
+	INFO("Trunc package: %d", packetSize);
     }
     return packetSize;
 }

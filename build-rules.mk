@@ -2,7 +2,9 @@ CPP=g++
 CFLAGS=-O2 -Werror -Wextra -Wall -I.
 CFLAGS+=-I./src/server \
 	-I./src/usb \
-	-I./src/util
+	-I./src/util \
+	-I./src/log
+
 CFLAGS+=-ggdb
 CFLAGS+=$(shell wx-config --cxxflags)
 
@@ -23,6 +25,9 @@ $(OBJDIR)/%.o : src/usb/%.cc
 	$(CPP) -c $(CFLAGS) $^ -o $@
 
 $(OBJDIR)/%.o : src/util/%.cc
+	$(CPP) -c $(CFLAGS) $^ -o $@
+
+$(OBJDIR)/%.o : src/log/%.cc
 	$(CPP) -c $(CFLAGS) $^ -o $@
 
 $(OBJDIR)/%.o : src/app/%.cc

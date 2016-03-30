@@ -2,16 +2,19 @@
 #include <wx/sckipc.h>
 #include <wx/thread.h>
 
+
+#include "Verbose.h"
 #include "UsbIpServer.h"
 #include "NetworkUtil.h"
 
+using namespace Verbose;
 using namespace NetworkUtil;
 
 class ServerThread : public wxThread {
 public:
     ServerThread(UsbIpServer* usbIpServer)
-        : wxThread(wxTHREAD_DETACHED)
-        { this->usbIpServer = usbIpServer; }
+	: wxThread(wxTHREAD_DETACHED)
+	{ this->usbIpServer = usbIpServer; }
 protected:
     virtual ExitCode Entry() {
 	usbIpServer->ServerWorker();
@@ -23,7 +26,7 @@ protected:
 class ConnectionThread : public wxThread {
 public:
     ConnectionThread(UsbIpServer* usbIpServer, wxSocketBase* clientSocket)
-        : wxThread(wxTHREAD_DETACHED) {
+	: wxThread(wxTHREAD_DETACHED) {
 	this->usbIpServer = usbIpServer;
 	this->clientSocket = clientSocket;
 	}
@@ -46,7 +49,6 @@ UsbIpServer::UsbIpServer(int tcpPort) {
 
 UsbIpServer::~UsbIpServer() {
     if (serverSocket != NULL) {
-	wxPrintf("Delete serversocket\n");
 	delete serverSocket;
     }
 }
@@ -58,24 +60,24 @@ void UsbIpServer::AddDevice(UsbDevice* dev, string path, string busId, int busNu
 bool UsbIpServer::Init() {
     wxIPV4address addr;
     if(!addr.Service(tcpPort)) {
-	wxPrintf("No address\n");
+	ERROR("TCP port");
 	return false;
     }
 
     serverSocket = new wxSocketServer(addr);
     if (serverSocket == NULL) {
-	wxPrintf("No serversocket\n");
+	ERROR("ServerSocket");
 	return false;
     }
 
     wxSocketFlags flags = serverSocket->GetFlags();
     flags |= wxSOCKET_REUSEADDR;
     serverSocket->SetFlags(flags);
-    
+
     if (!serverSocket->Ok()) {
-	wxPrintf("Not OK\n");
+	ERROR("ServerSocket not ok");
 	serverSocket->Destroy();
-        serverSocket = NULL;
+	serverSocket = NULL;
 	return false;
     }
 
@@ -83,12 +85,12 @@ bool UsbIpServer::Init() {
 }
 
 bool UsbIpServer::StartServer() {
-    wxThread* thread = new ServerThread(this);    
+    wxThread* thread = new ServerThread(this);
     if ( thread->Run() != wxTHREAD_NO_ERROR ) {
-        delete thread;
-        return false;
+	delete thread;
+	return false;
     }
-    
+
     while(!serverWorkerActive) {
 	wxMilliSleep(100);
     }
@@ -99,12 +101,16 @@ bool UsbIpServer::StartServer() {
 void UsbIpServer::StopServer() {
     if (serverWorkerActive) {
 	killServerWorker = true;
+	int oldActioveClients = -1;
 	while((serverWorkerActive) || (activeClients > 0)) {
-	    wxPrintf("%d\n", activeClients);
+	    if (activeClients != oldActioveClients) {
+		INFO("Active socket clients %d", activeClients);
+		oldActioveClients = activeClients;
+	    }
 	    wxSleep(1);
 	}
     } else {
-	wxPrintf("Server not active...\n");
+	ERROR("Cannot stop inactive server...");
     }
 }
 
@@ -112,12 +118,12 @@ void UsbIpServer::ServerWorker() {
     serverWorkerActive = true;
     while (!killServerWorker) {
 	wxSocketBase * clientSocket = serverSocket->Accept(false);
-        if (clientSocket == NULL) {
+	if (clientSocket == NULL) {
 	    wxMilliSleep(500);
 	    continue;
 	}
 
-	wxPrintf("Connect\n");
+	INFO("Incoming socket connection");
 	if (!StartConnectionThread(clientSocket)) {
 	    clientSocket->Destroy();
 	}
@@ -126,7 +132,7 @@ void UsbIpServer::ServerWorker() {
 }
 
 bool UsbIpServer::StartConnectionThread(wxSocketBase* clientSocket) {
-    wxThread* thread = new ConnectionThread(this, clientSocket);    
+    wxThread* thread = new ConnectionThread(this, clientSocket);
     if ( thread->Run() != wxTHREAD_NO_ERROR ) {
 	delete thread;
 	return false;
@@ -138,12 +144,12 @@ bool UsbIpServer::StartConnectionThread(wxSocketBase* clientSocket) {
 void UsbIpServer::ConnectionWorker(wxSocketBase* clientSocket) {
     unsigned char buffer[MESSAGE_BUFFER_SIZE];
     activeClients++;
-    
+
     while(clientSocket->IsConnected()) {
 	clientSocket->Read(buffer, MESSAGE_BUFFER_SIZE);
 	int readBytes = clientSocket->LastReadCount();
 
-	wxPrintf("Read %d byes\n",  readBytes);
+	INFO("Got %d bytes from socket", readBytes);
 	if (readBytes > 0) {
 	    UsbIpProtocolHandler(clientSocket, buffer, readBytes);
 	}
@@ -163,12 +169,20 @@ void UsbIpServer::UsbIpProtocolHandler(wxSocketBase* clientSocket, unsigned char
 	/* USBIP_CMD_SUBMIT */
 	UsbIpHandleURB(clientSocket, buffer, len);
 	return;
+    case 0x00000003:
+	ERROR("Unhandled Command %.8x", cmd);
+	return;
+    default:
+	break;
     }
-	
+
     unsigned int version = GetUint(buffer, 0, 2);
-    wxPrintf("Version %.4x\n", version);
+    if (version != 0x111) {
+	ERROR("Wrong protocol version %.4x", version);
+	return;
+    }
     cmd = GetUint(buffer, 2, 2);
-    
+
     switch(cmd) {
     case 0x8005:
 	/* OP_REQ_DEVLIST */
@@ -178,7 +192,7 @@ void UsbIpServer::UsbIpProtocolHandler(wxSocketBase* clientSocket, unsigned char
 	UspIpReplyImport(clientSocket, buffer, len);
 	break;
     default:
-	wxPrintf("Unknown command: %.4x\n", cmd);
+	ERROR("Unknown command: %.4x\n", cmd);
 	break;
     }
 
@@ -212,36 +226,35 @@ void UsbIpServer::UspIpReplyImport(wxSocketBase* clientSocket, unsigned char* bu
     pos += SetUint(0x0111, tx_buffer, pos, 2); /* Version */
     pos += SetUint(0x0003, tx_buffer, pos, 2); /* Reply   */
     pos += SetUint(0, tx_buffer, pos, 4);      /* Status  */
-    
+
     pos += usbIpDevice.FillDeviceData(tx_buffer, pos, false);
     clientSocket->Write(tx_buffer, pos);
-    wxPrintf("TX: %d\n", pos);
 }
 
 void UsbIpServer::UsbIpHandleURB(wxSocketBase* clientSocket, unsigned char* buffer, int len) {
-    wxPrintf("URB: %d\n", len);
+    INFO("URB In [%d]", len);
     int seqNum = GetUint(buffer, 4, 4);
     int devId = GetUint(buffer, 8, 4);
-    int inOut = GetUint(buffer, 12, 4);
     int ep = GetUint(buffer, 16, 4);
-    int flags = GetUint(buffer, 20, 4);
-    int bufLength = GetUint(buffer, 24, 4);
-    int startFrame = GetUint(buffer, 28, 4);
-    int nofPackets = GetUint(buffer, 32, 4);
-    int interval = GetUint(buffer, 36, 4);
+    int transferFlags = GetUint(buffer, 20, 4);
+    int transferBufferLength = GetUint(buffer, 24, 4);
 
-    wxPrintf("Seq=%d : Id=%d : I/O=%d : EP=%d : Flags=%d : BufLength=%d : StartFrame=%d : NofPackets=%d : Interval=%d\n", seqNum, devId, inOut, ep, flags, bufLength, startFrame, nofPackets, interval);
+    INFO("  URB: SeqNum %.8x DevId %.8x", seqNum, devId);
+    INFO("  URB: Flags %.4x EP%d ", transferFlags, ep);
+    INFO("  URB: TransferBufferLength %d", transferBufferLength);
 
-    wxPrintf("Setup: ");
-    for (int idx = 0; idx < 8; idx++) {
-	wxPrintf("%.2x, ", buffer[40+idx]);
-    }
-    wxPrintf("\n");
+    // int inOut = GetUint(buffer, 12, 4);
+    // int startFrame = GetUint(buffer, 28, 4);
+    // int nofPackets = GetUint(buffer, 32, 4);
+    // int interval = GetUint(buffer, 36, 4);
+    // INFO("Seq=%d : Id=%d : I/O=%d : EP=%d : Flags=%d : BufLength=%d : StartFrame=%d : NofPackets=%d : Interval=%d", seqNum, devId, inOut, ep, flags, bufLength, startFrame, nofPackets, interval);
+
+    INFO_VECTOR("USB Setup", &buffer[40], 8);
 
     unsigned char usbReply[64];
-    int usbdataLength = usbIpDevice.TxRx(&buffer[40], &buffer[48], usbReply, bufLength); 
-    wxPrintf("Reply Length %d\n", usbdataLength);
-    
+    int usbdataLength = usbIpDevice.TxRx(&buffer[40], &buffer[48], usbReply, transferBufferLength);
+    INFO_VECTOR("USB Reply", usbReply, usbdataLength);
+
     unsigned char tx_buffer[512];
     memset(tx_buffer, 0, sizeof(tx_buffer));
     int pos = 0;
@@ -259,5 +272,5 @@ void UsbIpServer::UsbIpHandleURB(wxSocketBase* clientSocket, unsigned char* buff
     pos += AddData(usbReply, tx_buffer, pos, usbdataLength); /* Data */
 
     clientSocket->Write(tx_buffer, pos);
-    wxPrintf("URB TX: %d\n", pos);
+    INFO("URB Out [%d]", pos);
 }

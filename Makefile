@@ -9,6 +9,7 @@ SRC_FILES = \
 	UsbEndpoint.cc \
 	UsbUtil.cc \
 	NetworkUtil.cc \
+	Verbose.cc \
 	TestApp.cc
 
 include build-rules.mk
