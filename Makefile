@@ -10,6 +10,7 @@ SRC_FILES = \
 	UsbUtil.cc \
 	NetworkUtil.cc \
 	Verbose.cc \
+	HidMouse.cc \
 	TestApp.cc
 
 include build-rules.mk

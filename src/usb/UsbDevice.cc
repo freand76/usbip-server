@@ -83,14 +83,17 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
     (void)data;
 
     int packetSize = 0;
-    int bRequest = setup[1];
-    int reqIndex =  (setup[2] << 8) | setup[3];
+    uint8_t bRequest = setup[1];
     int pos = 0;
 
-    switch(bRequest) {
-    case 0x06:
-	switch(reqIndex) {
-	case 0x0001:
+    if (bRequest == 0x00) {
+	SetUint(0x0001, replyBuffer, 0, 2);
+	packetSize = 2;
+    } else if (bRequest == 0x06) {
+	uint8_t bRequestType = setup[3];
+	//uint8_t bRequestIndex = setup[2];
+	switch(bRequestType) {
+	case 0x01:
 	    replyBuffer[0] = 18;
 	    replyBuffer[1] = 1;
 	    SetUint(0x200, replyBuffer, 2, 2);
@@ -111,7 +114,7 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
 	    replyBuffer[17] = bNumConfigurations;
 	    packetSize = 18;
 	    break;
-	case 0x0002:
+	case 0x02:
 	    // FIXME Handle EP size better!!!
 	    // [ 5787.496570] usb 8-1: Using ep0 maxpacket: 8
 	    // [ 5787.497786] usb 8-1: config 1 interface 0 altsetting 0 bulk endpoint 0x81 has invalid maxpacket 64
@@ -123,11 +126,24 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
 	    }
 	    packetSize = pos;
 	    break;
+	case 0x06:
+	    replyBuffer[0] = 10;
+	    replyBuffer[1] = 6;
+	    SetUint(0x200, replyBuffer, 2, 2);
+	    replyBuffer[4] = bDeviceClass;
+	    replyBuffer[5] = bDeviceSubClass;
+	    replyBuffer[6] = bDeviceProtocol;
+	    replyBuffer[7] = 64;
+	    replyBuffer[8] = 0;
+	    replyBuffer[9] = 0;
+	    packetSize = 10;
+	    break;
 	default:
+	    ERROR("Unknown bRequest: %.2x bRequestType: %.2x", bRequest, bRequestType); 
 	    break;
 	}
-    default:
-	break;
+    } else {
+	ERROR("Unknown bRequest: %.2x", bRequest);
     }
 
     if (packetSize > bufLength) {

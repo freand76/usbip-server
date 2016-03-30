@@ -22,6 +22,8 @@
 #include "UsbEndpoint.h"
 #include "UsbIpServer.h"
 
+#include "HidMouse.h"
+
 using namespace Verbose;
 
 static volatile int keepRunning = 3;
@@ -51,25 +53,29 @@ int main(int argc, char* argv[]) {
 	return false;
     }
 
-    UsbEndpoint ep1(0x81, 2, 64, 10);
-    UsbEndpoint* epList0[1] = { &ep1 };
-    UsbInterface iface0(0, 0, 0xff, 1, 2, 0, 1, epList0);
+    HidMouse mouse(0x00fa, 0xc001, 0x1234);
+    test.AddDevice(&mouse, "My First Virtual Mouse", "1-1", 2, 3, USB_SPEED_HIGH);
 
-    UsbEndpoint ep2(0x82, 2, 64, 10);
-    UsbEndpoint* epList1[1] = { &ep2 };
-    UsbInterface iface1(1, 0, 0xff, 3, 4, 0, 1, epList1);
-    UsbInterface* interfaceList[2] = { &iface0, &iface1 };
-    UsbConfiguration config1(1, 0, 0xc0, 100, 2, interfaceList);
-    UsbConfiguration* configurationList[1] = { &config1 };
+    // UsbEndpoint ep1(0x81, 2, 64, 10);
+    // UsbEndpoint* epList0[1] = { &ep1 };
+    // UsbInterface iface0(0, 0, 0xff, 1, 2, 0, 1, epList0);
+
+    // UsbEndpoint ep2(0x82, 2, 64, 10);
+    // UsbEndpoint* epList1[1] = { &ep2 };
+    // UsbInterface iface1(1, 0, 0xff, 3, 4, 0, 1, epList1);
+    // UsbInterface* interfaceList[2] = { &iface0, &iface1 };
+    // UsbConfiguration config1(1, 0, 0xc0, 100, 2, interfaceList);
+    // UsbConfiguration* configurationList[1] = { &config1 };
+    // UsbDevice dev(0x00fa, 0xc001, 0x1234, 0xff, 0, 0, 1, configurationList);
+    // test.AddDevice(&dev, "My First Virtual Device", "1-1", 2, 3, USB_SPEED_HIGH);
 
     unsigned char buffer[512];
     memset(buffer, 0, 512);
-    int size = config1.GenerateDescriptor(buffer, 0);
+    int size = mouse.configurationList[0]->GenerateDescriptor(buffer, 0);
     INFO_VECTOR("ConfigurationDescriptor", buffer, size);
 
-    UsbDevice dev(0x00fa, 0xc001, 0x1234, 0xff, 0, 0, 1, configurationList);
 
-    test.AddDevice(&dev, "My First Virtual Device", "1-1", 2, 3, USB_SPEED_HIGH);
+
     INFO("Starting server");
     if (!test.StartServer()) {
 	ERROR("Could not start server");
