@@ -14,7 +14,9 @@
 
 #include <wx/wx.h>
 #include <wx/sckipc.h>
-#include <wx/thread.h>
+
+#include <cstdio>
+#include <thread>
 
 #include "Verbose.h"
 #include "UsbIpServer.h"
@@ -23,34 +25,9 @@
 using namespace Verbose;
 using namespace NetworkUtil;
 
-class ServerThread : public wxThread {
-public:
-    ServerThread(UsbIpServer* usbIpServer)
-	: wxThread(wxTHREAD_DETACHED)
-	{ this->usbIpServer = usbIpServer; }
-protected:
-    virtual ExitCode Entry() {
-	usbIpServer->ServerWorker();
-	return NULL;
-    }
-    UsbIpServer* usbIpServer;
-};
-
-class ConnectionThread : public wxThread {
-public:
-    ConnectionThread(UsbIpServer* usbIpServer, wxSocketBase* clientSocket)
-	: wxThread(wxTHREAD_DETACHED) {
-	this->usbIpServer = usbIpServer;
-	this->clientSocket = clientSocket;
-	}
-protected:
-    virtual ExitCode Entry() {
-	usbIpServer->ConnectionWorker(clientSocket);
-	return NULL;
-    }
-    UsbIpServer* usbIpServer;
-    wxSocketBase* clientSocket;
-};
+static void milliSleep(int ms) {
+    usleep(ms*1000);
+}
 
 UsbIpServer::UsbIpServer(int tcpPort) {
     this->tcpPort = tcpPort;
@@ -98,14 +75,13 @@ bool UsbIpServer::Init() {
 }
 
 bool UsbIpServer::StartServer() {
-    wxThread* thread = new ServerThread(this);
-    if ( thread->Run() != wxTHREAD_NO_ERROR ) {
-	delete thread;
+    std::thread* server = new std::thread(&UsbIpServer::ServerWorker, this);
+    if (server == NULL) {
 	return false;
     }
 
     while(!serverWorkerActive) {
-	wxMilliSleep(100);
+	milliSleep(100);
     }
 
     return true;
@@ -120,7 +96,7 @@ void UsbIpServer::StopServer() {
 		INFO("Active socket clients %d", activeClients);
 		oldActioveClients = activeClients;
 	    }
-	    wxSleep(1);
+	    milliSleep(1000);
 	}
     } else {
 	ERROR("Cannot stop inactive server...");
@@ -132,7 +108,7 @@ void UsbIpServer::ServerWorker() {
     while (!killServerWorker) {
 	wxSocketBase * clientSocket = serverSocket->Accept(false);
 	if (clientSocket == NULL) {
-	    wxMilliSleep(500);
+	    milliSleep(500);
 	    continue;
 	}
 
@@ -145,9 +121,8 @@ void UsbIpServer::ServerWorker() {
 }
 
 bool UsbIpServer::StartConnectionThread(wxSocketBase* clientSocket) {
-    wxThread* thread = new ConnectionThread(this, clientSocket);
-    if ( thread->Run() != wxTHREAD_NO_ERROR ) {
-	delete thread;
+    std::thread* connection = new std::thread(&UsbIpServer::ConnectionWorker, this, clientSocket);
+    if (connection == NULL) {
 	return false;
     }
     return true;
@@ -233,7 +208,8 @@ void UsbIpServer::UspIpReplyImport(wxSocketBase* clientSocket, unsigned char* bu
     if (len != 40) {
 	return;
     }
-    wxString busId = wxString::Format("%s", (char*)&buffer[8]);
+    std::string busId((char*)&buffer[8]);
+    INFO("Attach Device: %s", busId.c_str());
 
     int pos = 0;
     pos += SetUint(0x0111, tx_buffer, pos, 2); /* Version */

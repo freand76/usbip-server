@@ -1,10 +1,10 @@
 CPP=g++
-CFLAGS=-O2 -Werror -Wextra -Wall -I.
+
+CFLAGS=-O2 -std=c++11 -Werror -Wextra -Wall -I.
 CFLAGS+=-I./src/server \
 	-I./src/usb \
 	-I./src/util \
 	-I./src/log
-
 CFLAGS+=-ggdb
 CFLAGS+=$(shell wx-config --cxxflags)
 
