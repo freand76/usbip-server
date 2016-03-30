@@ -6,7 +6,7 @@ The usbip protocol can also be used to create a playground for USB stack and/or 
 The goal for this project is to implement a usbip-server that can handle USB devices in a VSP (Virtual System Prototype) enviromnent.
 
 ## Requrements
-- linux kernel > 3.17
+- linux kernel >= 3.17
 - package linux-tools-generic [apt-get install linux-tools-generic]
 - package libwxgtk3.0-dev     [apt-get install libwxgtk3.0-dev]
 
