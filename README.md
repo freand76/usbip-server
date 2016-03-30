@@ -18,13 +18,13 @@ The goal for this project is to implement a usbip-server that can handle USB dev
 ## Attach Virtual Device
 
 ### Load Module
-sudo modprobe vhci-hcd
+- sudo modprobe vhci-hcd
 
 ### List Devices
-usbip list -r <host>
+- usbip list -r **host**
 
 ### Attach Virtual USB Device
-sudo usbip attach -b 1-1 -r <host>
+- sudo usbip attach -b 1-1 -r **host**
 
 ## Todo
 - Handle several virtual USB devices in the UsbIpServer
