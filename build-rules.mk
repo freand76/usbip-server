@@ -6,10 +6,8 @@ CFLAGS+=-I./src/server \
 	-I./src/util \
 	-I./src/log
 CFLAGS+=-ggdb
-CFLAGS+=$(shell wx-config --cxxflags)
 
-LDFLAGS=
-LDFLAGS+=$(shell wx-config --libs)
+LDFLAGS=-lpthread
 
 OBJDIR=.x86
 $(shell mkdir -p $(OBJDIR))

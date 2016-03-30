@@ -8,7 +8,6 @@ The goal for this project is to implement a usbip-server that can handle USB dev
 ## Requrements
 - linux kernel >= 3.17
 - package linux-tools-generic [apt-get install linux-tools-generic]
-- package libwxgtk3.0-dev     [apt-get install libwxgtk3.0-dev]
 
 ## Build
 - cd usbip-server
@@ -29,5 +28,3 @@ The goal for this project is to implement a usbip-server that can handle USB dev
 ## Todo
 - Handle several virtual USB devices in the UsbIpServer
 - Implement fully functional USB stack
-- Remove dependency to wxWidgets
-

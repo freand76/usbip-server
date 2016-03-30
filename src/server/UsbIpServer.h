@@ -15,10 +15,8 @@
 #ifndef USB_IP_DRIVER_H
 #define USB_IP_DRIVER_H
 
-#include <wx/wx.h>
-#include <wx/sckipc.h>
-
 #include <string>
+#include <unistd.h>
 
 #include "UsbDevice.h"
 #include "UsbIpDevice.h"
@@ -34,14 +32,16 @@ public:
     bool StartServer();
     void StopServer();
     void ServerWorker();
-    bool StartConnectionThread(wxSocketBase* clientSocket);
-    void ConnectionWorker(wxSocketBase* clientSocket);
+    bool StartConnectionThread(int clientSocketFd);
+    void ConnectionWorker(int clientSocketFd);
 private:
-    void UsbIpProtocolHandler(wxSocketBase* clientSocket, unsigned char* buffer, int len);
-    void UsbIpReplyDeviceList(wxSocketBase* clientSocket);
-    void UspIpReplyImport(wxSocketBase* clientSocket, unsigned char* buffer, int len);
-    void UsbIpHandleURB(wxSocketBase* clientSocket, unsigned char* buffer, int len);
-    wxSocketServer* serverSocket;
+    void UsbIpProtocolHandler(int clientSocketFd, unsigned char* buffer, int len);
+    void UsbIpReplyDeviceList(int clientSocketFd);
+    void UspIpReplyImport(int clientSocketFd, unsigned char* buffer, int len);
+    void UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int len);
+
+
+    int serverSocketFd;
     bool serverWorkerActive;
     bool killServerWorker;
     int activeClients;

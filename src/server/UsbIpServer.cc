@@ -12,8 +12,11 @@
 	http://github.com/freand76/usbip-server
 ********************************************************/
 
-#include <wx/wx.h>
-#include <wx/sckipc.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <string.h>
 
 #include <cstdio>
 #include <thread>
@@ -31,15 +34,15 @@ static void milliSleep(int ms) {
 
 UsbIpServer::UsbIpServer(int tcpPort) {
     this->tcpPort = tcpPort;
-    this->serverSocket = NULL;
+    this->serverSocketFd = -1;
     this->serverWorkerActive = false;
     this->killServerWorker = false;
     this->activeClients = 0;
 }
 
 UsbIpServer::~UsbIpServer() {
-    if (serverSocket != NULL) {
-	delete serverSocket;
+    if (serverSocketFd >= 0) {
+	close(serverSocketFd);
     }
 }
 
@@ -48,26 +51,41 @@ void UsbIpServer::AddDevice(UsbDevice* dev, string path, string busId, int busNu
 }
 
 bool UsbIpServer::Init() {
-    wxIPV4address addr;
-    if(!addr.Service(tcpPort)) {
-	ERROR("TCP port");
+    struct sockaddr_in serverAddress;
+
+    serverSocketFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (serverSocketFd < 0) {
+	ERROR("Could not open server socket");
 	return false;
     }
 
-    serverSocket = new wxSocketServer(addr);
-    if (serverSocket == NULL) {
-	ERROR("ServerSocket");
+    memset(&serverAddress, 0, sizeof(serverAddress));
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    serverAddress.sin_port = htons(tcpPort);
+
+    if (bind(serverSocketFd, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
+	close(serverSocketFd);
+	serverSocketFd = -1;
+	ERROR("Could not bind server socket");
 	return false;
     }
 
-    wxSocketFlags flags = serverSocket->GetFlags();
-    flags |= wxSOCKET_REUSEADDR;
-    serverSocket->SetFlags(flags);
 
-    if (!serverSocket->Ok()) {
-	ERROR("ServerSocket not ok");
-	serverSocket->Destroy();
-	serverSocket = NULL;
+    listen(serverSocketFd, 16);
+
+    int flags = fcntl(serverSocketFd, F_GETFL, 0);
+    if (flags < 0) {
+	close(serverSocketFd);
+	serverSocketFd = -1;
+	ERROR("Could not get socket flags");
+	return false;
+    }
+    flags |= O_NONBLOCK;
+    if (fcntl(serverSocketFd, F_SETFL, flags) != 0) {
+	close(serverSocketFd);
+	serverSocketFd = -1;
+	ERROR("Could not set socket flags");
 	return false;
     }
 
@@ -106,22 +124,27 @@ void UsbIpServer::StopServer() {
 void UsbIpServer::ServerWorker() {
     serverWorkerActive = true;
     while (!killServerWorker) {
-	wxSocketBase * clientSocket = serverSocket->Accept(false);
-	if (clientSocket == NULL) {
+	struct sockaddr_in clientAddress;
+	socklen_t clientAddressLength = sizeof(clientAddress);
+	int clientSocketFd = accept(serverSocketFd,
+				    (struct sockaddr*)&clientAddress,
+				    &clientAddressLength);
+
+	if (clientSocketFd < 0) {
 	    milliSleep(500);
 	    continue;
 	}
 
 	INFO("Incoming socket connection");
-	if (!StartConnectionThread(clientSocket)) {
-	    clientSocket->Destroy();
+	if (!StartConnectionThread(clientSocketFd)) {
+	    close(clientSocketFd);
 	}
     }
     serverWorkerActive = false;
 }
 
-bool UsbIpServer::StartConnectionThread(wxSocketBase* clientSocket) {
-    std::thread* connection = new std::thread(&UsbIpServer::ConnectionWorker, this, clientSocket);
+bool UsbIpServer::StartConnectionThread(int clientSocketFd) {
+    std::thread* connection = new std::thread(&UsbIpServer::ConnectionWorker, this, clientSocketFd);
     if (connection == NULL) {
 	return false;
     }
@@ -129,24 +152,26 @@ bool UsbIpServer::StartConnectionThread(wxSocketBase* clientSocket) {
 }
 
 #define MESSAGE_BUFFER_SIZE 512
-void UsbIpServer::ConnectionWorker(wxSocketBase* clientSocket) {
+void UsbIpServer::ConnectionWorker(int clientSocketFd) {
     unsigned char buffer[MESSAGE_BUFFER_SIZE];
     activeClients++;
-
-    while(clientSocket->IsConnected()) {
-	clientSocket->Read(buffer, MESSAGE_BUFFER_SIZE);
-	int readBytes = clientSocket->LastReadCount();
+    INFO("Client connect");
+    while(1) {
+	int readBytes = read(clientSocketFd, buffer, sizeof(buffer));
 
 	INFO("Got %d bytes from socket", readBytes);
 	if (readBytes > 0) {
-	    UsbIpProtocolHandler(clientSocket, buffer, readBytes);
+	    UsbIpProtocolHandler(clientSocketFd, buffer, readBytes);
+	} else {
+	    break;
 	}
     }
-    clientSocket->Destroy();
+    INFO("Client disconnect");
+    close(clientSocketFd);
     activeClients--;
 }
 
-void UsbIpServer::UsbIpProtocolHandler(wxSocketBase* clientSocket, unsigned char* buffer, int len) {
+void UsbIpServer::UsbIpProtocolHandler(int clientSocketFd, unsigned char* buffer, int len) {
     if (len < 8) {
 	return;
     }
@@ -155,7 +180,7 @@ void UsbIpServer::UsbIpProtocolHandler(wxSocketBase* clientSocket, unsigned char
     switch(cmd) {
     case 0x00000001:
 	/* USBIP_CMD_SUBMIT */
-	UsbIpHandleURB(clientSocket, buffer, len);
+	UsbIpHandleURB(clientSocketFd, buffer, len);
 	return;
     case 0x00000003:
 	ERROR("Unhandled Command %.8x", cmd);
@@ -174,10 +199,10 @@ void UsbIpServer::UsbIpProtocolHandler(wxSocketBase* clientSocket, unsigned char
     switch(cmd) {
     case 0x8005:
 	/* OP_REQ_DEVLIST */
-	UsbIpReplyDeviceList(clientSocket);
+	UsbIpReplyDeviceList(clientSocketFd);
 	break;
     case 0x8003:
-	UspIpReplyImport(clientSocket, buffer, len);
+	UspIpReplyImport(clientSocketFd, buffer, len);
 	break;
     default:
 	ERROR("Unknown command: %.4x\n", cmd);
@@ -186,7 +211,7 @@ void UsbIpServer::UsbIpProtocolHandler(wxSocketBase* clientSocket, unsigned char
 
 }
 
-void UsbIpServer::UsbIpReplyDeviceList(wxSocketBase* clientSocket) {
+void UsbIpServer::UsbIpReplyDeviceList(int clientSocketFd) {
     unsigned char tx_buffer[512];
     memset(tx_buffer, 0, sizeof(tx_buffer));
 
@@ -198,10 +223,12 @@ void UsbIpServer::UsbIpReplyDeviceList(wxSocketBase* clientSocket) {
 
     pos += usbIpDevice.FillDeviceData(tx_buffer, pos, true);
 
-    clientSocket->Write(tx_buffer, pos);
+    if (write(clientSocketFd, tx_buffer, pos) != pos) {
+	ERROR("Did not write full packet to socket");
+    }
 }
 
-void UsbIpServer::UspIpReplyImport(wxSocketBase* clientSocket, unsigned char* buffer, int len) {
+void UsbIpServer::UspIpReplyImport(int clientSocketFd, unsigned char* buffer, int len) {
     unsigned char tx_buffer[512];
     memset(tx_buffer, 0, sizeof(tx_buffer));
 
@@ -217,10 +244,12 @@ void UsbIpServer::UspIpReplyImport(wxSocketBase* clientSocket, unsigned char* bu
     pos += SetUint(0, tx_buffer, pos, 4);      /* Status  */
 
     pos += usbIpDevice.FillDeviceData(tx_buffer, pos, false);
-    clientSocket->Write(tx_buffer, pos);
+    if (write(clientSocketFd, tx_buffer, pos) != pos) {
+	ERROR("Did not write full packet to socket");
+    }
 }
 
-void UsbIpServer::UsbIpHandleURB(wxSocketBase* clientSocket, unsigned char* buffer, int len) {
+void UsbIpServer::UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int len) {
     INFO("URB In [%d]", len);
     int seqNum = GetUint(buffer, 4, 4);
     int devId = GetUint(buffer, 8, 4);
@@ -260,6 +289,8 @@ void UsbIpServer::UsbIpHandleURB(wxSocketBase* clientSocket, unsigned char* buff
     pos += SetUint(0, tx_buffer, pos, 8);          /* Setup */
     pos += AddData(usbReply, tx_buffer, pos, usbdataLength); /* Data */
 
-    clientSocket->Write(tx_buffer, pos);
     INFO("URB Out [%d]", pos);
+    if (write(clientSocketFd, tx_buffer, pos) != pos) {
+	ERROR("Did not write full packet to socket");
+    }
 }

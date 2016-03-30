@@ -12,8 +12,7 @@
 	http://github.com/freand76/usbip-server
 ********************************************************/
 
-#include <wx/wx.h>
-#include <stdio.h>
+#include <string.h>
 #include <signal.h>
 
 #include "Verbose.h"
@@ -25,21 +24,26 @@
 
 using namespace Verbose;
 
-class Test : public wxAppConsole {
-    bool OnInit();
-    int OnRun();
-};
+static volatile int keepRunning = 3;
 
-wxIMPLEMENT_APP(Test);
-
-bool Test::OnInit() {
-    if (!wxAppConsole::OnInit()) {
-	return false;
+void intHandler(int) {
+    if (keepRunning == 3) {
+	INFO("Ctrl-C received, Do it 3 times if you reaaly want to quit");
     }
-    return true;
+
+    if (keepRunning > 0) {
+	keepRunning--;
+    }
 }
 
-int Test::OnRun() {
+int main(int argc, char* argv[]) {
+    signal(SIGINT, intHandler);
+
+    INFO("Command: %s", argv[0]);
+    for (int idx = 1; idx < argc; idx++) {
+	INFO("  arg%d = %s", idx, argv[idx]);
+    }
+
     UsbIpServer test;
     if (test.Init()) {
 	INFO("Init OK");
@@ -66,12 +70,18 @@ int Test::OnRun() {
     UsbDevice dev(0x00fa, 0xc001, 0x1234, 0xff, 0, 0, 1, configurationList);
 
     test.AddDevice(&dev, "My First Virtual Device", "1-1", 2, 3, USB_SPEED_HIGH);
-    if (test.StartServer()) {
-	INFO("Starting server");
-	wxSleep(10);
-	INFO("Stopping server");
-	test.StopServer();
+    INFO("Starting server");
+    if (!test.StartServer()) {
+	ERROR("Could not start server");
+	return EXIT_FAILURE;
     }
 
-    return false;
+    while(keepRunning > 0) {
+	usleep(500*1000);
+    }
+
+    INFO("Stopping server");
+    test.StopServer();
+
+    return EXIT_SUCCESS;
 }
