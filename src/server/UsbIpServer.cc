@@ -51,8 +51,8 @@ UsbIpServer::~UsbIpServer() {
     }
 }
 
-void UsbIpServer::AddDevice(UsbDevice* dev, wxString path, wxString busId, int busNum, int devNum, enum usb_device_speed speed) {
-    usbDeviceItem = UsbDeviceItem(dev, path, busId, busNum, devNum, speed);
+void UsbIpServer::AddDevice(UsbDevice* dev, string path, string busId, int busNum, int devNum, enum usb_device_speed speed) {
+    usbIpDevice = UsbIpDevice(dev, path, busId, busNum, devNum, speed);
 }
 
 bool UsbIpServer::Init() {
@@ -184,28 +184,6 @@ void UsbIpServer::UsbIpProtocolHandler(wxSocketBase* clientSocket, unsigned char
 
 }
 
-static int FillDeviceData(UsbDeviceItem* item, unsigned char* buffer, int offset) {
-    int pos = offset;
-
-    pos += item->GetPath(buffer, pos);
-    pos += item->GetBusId(buffer, pos);
-    pos += SetUint(item->busNum, buffer, pos, 4); /* */
-    pos += SetUint(item->devNum, buffer, pos, 4); /* */
-    pos += SetUint(item->speed, buffer, pos, 4); /* */
-    
-    pos += SetUint(item->d->idVendor, buffer, pos, 2); /* */
-    pos += SetUint(item->d->idProduct, buffer, pos, 2); /* */
-    pos += SetUint(item->d->bcdDevice, buffer, pos, 2); /* */
-    pos += SetUint(item->d->bDeviceClass, buffer, pos, 1); /* */
-    pos += SetUint(item->d->bDeviceSubClass, buffer, pos, 1); /* */
-    pos += SetUint(item->d->bDeviceProtocol, buffer, pos, 1); /* */
-    pos += SetUint(item->d->bConfigurationValue, buffer, pos, 1); /* */
-    pos += SetUint(item->d->bNumConfigurations, buffer, pos, 1); /* */
-    pos += SetUint(item->d->configurationArray[0]->bNumInterfaces, buffer, pos, 1); /* */
-
-    return pos - offset;
-}
-
 void UsbIpServer::UsbIpReplyDeviceList(wxSocketBase* clientSocket) {
     unsigned char tx_buffer[512];
     memset(tx_buffer, 0, sizeof(tx_buffer));
@@ -216,13 +194,7 @@ void UsbIpServer::UsbIpReplyDeviceList(wxSocketBase* clientSocket) {
     pos += SetUint(0, tx_buffer, pos, 4);      /* Status  */
     pos += SetUint(1, tx_buffer, pos, 4);      /* N devices */
 
-    pos += FillDeviceData(&usbDeviceItem, tx_buffer, pos);
-
-    /* Interface data */
-    pos += SetUint(0x03, tx_buffer, pos, 1); /* Interfaceclass = HID */
-    pos += SetUint(0, tx_buffer, pos, 1);    /* */
-    pos += SetUint(0, tx_buffer, pos, 1); /* */
-    pos += SetUint(0, tx_buffer, pos, 1); /* */
+    pos += usbIpDevice.FillDeviceData(tx_buffer, pos, true);
 
     clientSocket->Write(tx_buffer, pos);
 }
@@ -241,7 +213,7 @@ void UsbIpServer::UspIpReplyImport(wxSocketBase* clientSocket, unsigned char* bu
     pos += SetUint(0x0003, tx_buffer, pos, 2); /* Reply   */
     pos += SetUint(0, tx_buffer, pos, 4);      /* Status  */
     
-    pos += FillDeviceData(&usbDeviceItem, tx_buffer, pos);
+    pos += usbIpDevice.FillDeviceData(tx_buffer, pos, false);
     clientSocket->Write(tx_buffer, pos);
     wxPrintf("TX: %d\n", pos);
 }
@@ -267,7 +239,7 @@ void UsbIpServer::UsbIpHandleURB(wxSocketBase* clientSocket, unsigned char* buff
     wxPrintf("\n");
 
     unsigned char usbReply[64];
-    int usbdataLength = usbDeviceItem.d->TxRx(&buffer[40], &buffer[40], usbReply, bufLength); 
+    int usbdataLength = usbIpDevice.TxRx(&buffer[40], &buffer[48], usbReply, bufLength); 
     wxPrintf("Reply Length %d\n", usbdataLength);
     
     unsigned char tx_buffer[512];

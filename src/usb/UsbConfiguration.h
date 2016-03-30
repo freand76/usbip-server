@@ -6,11 +6,11 @@
 
 class UsbConfiguration {
 public:
-    UsbConfiguration(uint8_t bNumInterfaces,
-                     uint8_t bConfigurationValue,
+    UsbConfiguration(uint8_t bConfigurationValue,
                      uint8_t iConfiguration,
                      uint8_t bmAttributes,
                      uint8_t bMaxPower,
+                     uint8_t bNumInterfaces,
                      UsbInterface** interfaceArray);
 
     int GenerateDescriptor(unsigned char* buffer, int offset);

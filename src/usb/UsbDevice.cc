@@ -99,12 +99,17 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
 	    packetSize = 18;
 	    break;
 	case 0x0002:
+	    // FIXME Handle EP size better!!!
+	    // [ 5787.496570] usb 8-1: Using ep0 maxpacket: 8
+	    // [ 5787.497786] usb 8-1: config 1 interface 0 altsetting 0 bulk endpoint 0x81 has invalid maxpacket 64
+	    // [ 5787.497792] usb 8-1: config 1 interface 1 altsetting 0 bulk endpoint 0x82 has invalid maxpacket 64
+
 	    pos = 0;
 	    for (int idx = 0; idx < bNumConfigurations; idx++) {
 		pos += configurationArray[idx]->GenerateDescriptor(replyBuffer, pos);
 	    }
 	    wxPrintf("ConfigSize = %d\n", pos);
-	    packetSize = 25;
+	    packetSize = pos;
 	    break;
 	default:
 	    break;

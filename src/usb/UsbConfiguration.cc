@@ -4,11 +4,11 @@
 using namespace UsbUtil;
 
 
-UsbConfiguration::UsbConfiguration(uint8_t bNumInterfaces,
-				   uint8_t bConfigurationValue,
+UsbConfiguration::UsbConfiguration(uint8_t bConfigurationValue,
 				   uint8_t iConfiguration,
 				   uint8_t bmAttributes,
 				   uint8_t bMaxPower,
+				   uint8_t bNumInterfaces,
 				   UsbInterface** interfaceArray) {
     this->bNumInterfaces = bNumInterfaces;
     this->bConfigurationValue = bConfigurationValue;

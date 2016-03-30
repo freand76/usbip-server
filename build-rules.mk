@@ -9,7 +9,7 @@ CFLAGS+=$(shell wx-config --cxxflags)
 LDFLAGS=
 LDFLAGS+=$(shell wx-config --libs)
 
-OBJDIR=.build
+OBJDIR=.x86
 $(shell mkdir -p $(OBJDIR))
 
 OBJ_FILES=$(addprefix $(OBJDIR)/,$(SRC_FILES:.cc=.o))

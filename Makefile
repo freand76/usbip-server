@@ -2,6 +2,7 @@ PROG=TestApp
 
 SRC_FILES = \
 	UsbIpServer.cc \
+	UsbIpDevice.cc \
 	UsbDevice.cc \
 	UsbConfiguration.cc \
 	UsbInterface.cc \
