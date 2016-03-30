@@ -1,3 +1,17 @@
+/*******************************************************
+ usbip-server - a platform for USB device prototyping
+
+ Fredrik Andersson
+ Copyright 2016, All Rights Reserved.
+
+ This software may be used by anyone for any reason so
+ long as the copyright notice in the source files
+ remains intact.
+
+ code repository located at:
+	http://github.com/freand76/usbip-server
+********************************************************/
+
 #include <string.h>
 
 #include "UsbIpDevice.h"
@@ -22,7 +36,7 @@ UsbIpDevice::UsbIpDevice(UsbDevice* d, string path, string busId,
     }
     this->busNum = busNum;
     this->devNum = devNum;
-    this->speed = speed;    
+    this->speed = speed;
 }
 
 int UsbIpDevice::FillDeviceData(unsigned char* buffer, int offset, bool withInterfaces) {
@@ -33,7 +47,7 @@ int UsbIpDevice::FillDeviceData(unsigned char* buffer, int offset, bool withInte
     pos += SetUint(busNum, buffer, pos, 4); /* */
     pos += SetUint(devNum, buffer, pos, 4); /* */
     pos += SetUint(speed, buffer, pos, 4); /* */
-    
+
     pos += SetUint(d->idVendor, buffer, pos, 2); /* */
     pos += SetUint(d->idProduct, buffer, pos, 2); /* */
     pos += SetUint(d->bcdDevice, buffer, pos, 2); /* */
@@ -53,7 +67,7 @@ int UsbIpDevice::FillDeviceData(unsigned char* buffer, int offset, bool withInte
 	    pos += SetUint(0,                             buffer, pos, 1); /* Padding */
 	}
     }
-    
+
     return pos - offset;
 }
 
