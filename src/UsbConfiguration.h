@@ -13,7 +13,7 @@ public:
                      uint8_t bMaxPower,
                      UsbInterface** interfaceArray);
 
-    int GenerateConfigurationData(unsigned char* buffer, int offset);
+    int GenerateDescriptor(unsigned char* buffer, int offset);
 
     uint8_t bNumInterfaces;
     uint8_t bConfigurationValue;

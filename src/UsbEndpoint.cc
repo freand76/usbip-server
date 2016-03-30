@@ -3,17 +3,17 @@
 
 using namespace UsbUtil;
 
-UsbEndpoint::UsbEndpoint(int bEndpointAddress,
-			 int bmAttributes,
-			 int wMaxPacketSize,
-			 int bInterval) {
+UsbEndpoint::UsbEndpoint(uint8_t bEndpointAddress,
+			 uint8_t bmAttributes,
+			 uint16_t wMaxPacketSize,
+			 uint8_t bInterval) {
     this->bEndpointAddress = bEndpointAddress;
     this->bmAttributes  = bmAttributes;
     this->wMaxPacketSize = wMaxPacketSize;
     this->bInterval = bInterval; 
 }
 
-int UsbEndpoint::GenerateConfigurationData(unsigned char* buffer, int offset) {
+int UsbEndpoint::GenerateDescriptor(unsigned char* buffer, int offset) {
     buffer[offset + 0] = 7;
     buffer[offset + 1] = 5;
     buffer[offset + 2] = bEndpointAddress;

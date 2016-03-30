@@ -1,18 +1,20 @@
 #ifndef USB_ENDPOINT_H
 #define USB_ENDPOINT_H
 
+#include <stdint.h>
+
 class UsbEndpoint {
 public:
-    UsbEndpoint(int bEndpointAddress,
-                int bmAttributes,
-                int wMaxPacketSize,
-                int bInterval);
-    int GenerateConfigurationData(unsigned char* buffer, int offset);
+    UsbEndpoint(uint8_t bEndpointAddress,
+                uint8_t bmAttributes,
+                uint16_t wMaxPacketSize,
+                uint8_t bInterval);
+    int GenerateDescriptor(unsigned char* buffer, int offset);
 
-    int bEndpointAddress;
-    int bmAttributes;
-    int wMaxPacketSize;
-    int bInterval;
+    uint8_t bEndpointAddress;
+    uint8_t bmAttributes;
+    uint16_t wMaxPacketSize;
+    uint8_t bInterval;
 };
 
 #endif // USB_ENDPOINT_H

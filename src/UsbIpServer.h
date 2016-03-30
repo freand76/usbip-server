@@ -1,13 +1,20 @@
 #ifndef USB_IP_DRIVER_H
 #define USB_IP_DRIVER_H
 
+#include <linux/usb/ch9.h>
+
 #include <wx/wx.h>
 #include <wx/sckipc.h>
 #include "UsbDevice.h"
 
 class UsbDeviceItem {
 public:
-    UsbDeviceItem(UsbDevice* d = NULL, wxString path = "", wxString busId = "", int busNum = 0, int devNum = 0, int speed = 0) {
+    UsbDeviceItem(UsbDevice* d = NULL,
+                  wxString path = "",
+                  wxString busId = "",
+                  int busNum = 0,
+                  int devNum = 0,
+                  enum usb_device_speed speed = USB_SPEED_HIGH) {
         this->d = d;
         this->path = path;
         this->busId = busId;
@@ -40,7 +47,7 @@ class UsbIpServer {
 public:
     UsbIpServer(int tcpPort = 3240);
     ~UsbIpServer();
-    void AddDevice(UsbDevice* dev, wxString path, wxString busId, int busNum, int devNum, int speed);
+    void AddDevice(UsbDevice* dev, wxString path, wxString busId, int busNum, int devNum, enum usb_device_speed speed);
     bool Init();
     bool StartServer();
     void StopServer();

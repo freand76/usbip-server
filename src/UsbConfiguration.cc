@@ -18,7 +18,7 @@ UsbConfiguration::UsbConfiguration(uint8_t bNumInterfaces,
     this->interfaceArray = interfaceArray;
 }
 
-int UsbConfiguration::GenerateConfigurationData(unsigned char* buffer, int offset) {
+int UsbConfiguration::GenerateDescriptor(unsigned char* buffer, int offset) {
     buffer[0] = 9;
     buffer[1] = 2;
     buffer[4] = bNumInterfaces;
@@ -29,7 +29,7 @@ int UsbConfiguration::GenerateConfigurationData(unsigned char* buffer, int offse
 
     int pos = 9;
     for (int idx = 0; idx < bNumInterfaces; idx++) {
-	pos += interfaceArray[idx]->GenerateConfigurationData(buffer, offset + pos);
+	pos += interfaceArray[idx]->GenerateDescriptor(buffer, offset + pos);
     }
 
     /* Set total size */

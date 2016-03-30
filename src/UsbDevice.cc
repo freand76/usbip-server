@@ -101,7 +101,7 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
 	case 0x0002:
 	    pos = 0;
 	    for (int idx = 0; idx < bNumConfigurations; idx++) {
-		pos += configurationArray[idx]->GenerateConfigurationData(replyBuffer, pos);
+		pos += configurationArray[idx]->GenerateDescriptor(replyBuffer, pos);
 	    }
 	    wxPrintf("ConfigSize = %d\n", pos);
 	    packetSize = 25;

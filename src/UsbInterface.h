@@ -1,28 +1,29 @@
 #ifndef USB_INTERFACE_H
 #define USB_INTERFACE_H
 
+#include <stdint.h>
 #include "UsbEndpoint.h"
 
 class UsbInterface {
 public:
-    UsbInterface(int bInterfaceNumber,
-                 int bAlternateSetting,
-                 int bNumEndpoints,
-                 int bInterfaceClass,
-                 int bInterfaceSubClass,
-                 int bInterfaceProtocol,
-                 int iInterface,
+    UsbInterface(uint8_t bInterfaceNumber,
+                 uint8_t bAlternateSetting,
+                 uint8_t bNumEndpoints,
+                 uint8_t bInterfaceClass,
+                 uint8_t bInterfaceSubClass,
+                 uint8_t bInterfaceProtocol,
+                 uint8_t iInterface,
                  UsbEndpoint** endpointArray);
 
-    int GenerateConfigurationData(unsigned char* buffer, int offset);
+    int GenerateDescriptor(unsigned char* buffer, int offset);
 
-    int bInterfaceNumber;
-    int bAlternateSetting;
-    int bNumEndpoints;
-    int bInterfaceClass;
-    int bInterfaceSubClass;
-    int bInterfaceProtocol;
-    int iInterface;
+    uint8_t bInterfaceNumber;
+    uint8_t bAlternateSetting;
+    uint8_t bNumEndpoints;
+    uint8_t bInterfaceClass;
+    uint8_t bInterfaceSubClass;
+    uint8_t bInterfaceProtocol;
+    uint8_t iInterface;
     UsbEndpoint** endpointArray;
 };
 

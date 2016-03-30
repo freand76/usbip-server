@@ -1,7 +1,6 @@
 #include <wx/wx.h>
 #include <stdio.h>
 #include <signal.h>
-#include <linux/usb/ch9.h>
 
 #include "UsbDevice.h"
 #include "UsbConfiguration.h"
@@ -40,15 +39,6 @@ int Test::OnRun() {
     UsbConfiguration* configurationList[1] = { &config1 }; 
 	
     UsbDevice dev(0x00fa, 0xc001, 0x1234, 0xff, 0, 0, 1, configurationList);
-    
-    unsigned char buf[512];
-    int size = config1.GenerateConfigurationData(buf, 0);
-    wxPrintf("Size %d\n", size);
-    for (int idx = 0; idx < size; idx++) {
-	wxPrintf("%.2x, ", buf[idx]);
-	if ((idx % 16) == 15) wxPrintf("\n");
-    }
-    wxPrintf("\n");
     
     test.AddDevice(&dev, "My First Virtual Device", "1-1", 2, 3, USB_SPEED_HIGH);
     bool res = test.StartServer();

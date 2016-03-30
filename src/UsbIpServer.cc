@@ -51,7 +51,7 @@ UsbIpServer::~UsbIpServer() {
     }
 }
 
-void UsbIpServer::AddDevice(UsbDevice* dev, wxString path, wxString busId, int busNum, int devNum, int speed) {
+void UsbIpServer::AddDevice(UsbDevice* dev, wxString path, wxString busId, int busNum, int devNum, enum usb_device_speed speed) {
     usbDeviceItem = UsbDeviceItem(dev, path, busId, busNum, devNum, speed);
 }
 
