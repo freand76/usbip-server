@@ -1,4 +1,4 @@
-/*******************************************************
+ /*******************************************************
  usbip-server - a platform for USB device prototyping
 
  Fredrik Andersson
@@ -175,6 +175,7 @@ void UsbIpServer::ConnectionWorker(int clientSocketFd) {
 
 	DEBUG("Got %d bytes from socket", readBytes);
 	if (readBytes > 0) {
+	    /* FIXME Handle multiple packets */
 	    UsbIpProtocolHandler(clientSocketFd, buffer, readBytes);
 	} else {
 	    break;
