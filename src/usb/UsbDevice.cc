@@ -53,7 +53,7 @@ int UsbDevice::TxRx(uint8_t endpoint, uint8_t* setup, uint8_t* data, uint8_t* re
 	case 1:
 	    return InterfaceRequest(setup, data, replyBuffer, bufLength);
 	default:
-	    INFO("Unknown bfRecipient %d", bfRecipient);
+	    DEBUG("Unknown bfRecipient %d", bfRecipient);
 	}
 	return EP_STALL;
     }
@@ -79,7 +79,7 @@ int UsbDevice::DeviceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer
 
 int UsbDevice::OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
     uint8_t bRequest = setup[1];
-    INFO("UsbDevice: OutRequest %.2x", bRequest);
+    DEBUG("UsbDevice: OutRequest %.2x", bRequest);
 
     int packetSize = 0;
 
@@ -94,7 +94,7 @@ int UsbDevice::OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, i
 
     if (packetSize > bufLength) {
 	packetSize = bufLength;
-	INFO("Trunc package: %d", packetSize);
+	DEBUG("Trunc package: %d", packetSize);
     }
     return packetSize;
 }
@@ -159,14 +159,14 @@ int UsbDevice::InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, in
     (void)bufLength;
 
     uint8_t bRequest = setup[1];
-    INFO("UsbDevice: InRequest %.2x", bRequest);
+    DEBUG("UsbDevice: InRequest %.2x", bRequest);
     switch(bRequest) {
     case 0x09:
     {
 	/* Set Configuration */
 	int configrationValue = GetUint(setup, 2, 2);
-	INFO("UsbDevice: Set Configuration: %d", configrationValue);
-	INFO("Device Connected");
+	DEBUG("UsbDevice: Set Configuration: %d", configrationValue);
+	DEBUG("Device Connected");
 	deviceConnected = true;
 	return 0;
     }
@@ -177,7 +177,7 @@ int UsbDevice::InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, in
 
 int UsbDevice::InterfaceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
     uint8_t bInterfaceIndex = setup[2];
-    INFO("UsbDevice: InterfaceRequest %.2x", bInterfaceIndex);
+    DEBUG("UsbDevice: InterfaceRequest %.2x", bInterfaceIndex);
     if (bInterfaceIndex < configurationArray[0]->bNumInterfaces) {
 	return configurationArray[0]->interfaceArray[bInterfaceIndex]->InterfaceRequest(setup, data, replyBuffer, bufLength);
     }

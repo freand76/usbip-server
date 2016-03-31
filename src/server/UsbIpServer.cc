@@ -110,6 +110,10 @@ bool UsbIpServer::StartServer() {
     return true;
 }
 
+bool UsbIpServer::ConnectedClients() {
+    return (activeClients > 0);
+}
+
 void UsbIpServer::StopServer() {
     if (serverWorkerActive) {
 	killServerWorker = true;
@@ -169,7 +173,7 @@ void UsbIpServer::ConnectionWorker(int clientSocketFd) {
     while(1) {
 	int readBytes = read(clientSocketFd, buffer, sizeof(buffer));
 
-	INFO("Got %d bytes from socket", readBytes);
+	DEBUG("Got %d bytes from socket", readBytes);
 	if (readBytes > 0) {
 	    UsbIpProtocolHandler(clientSocketFd, buffer, readBytes);
 	} else {
@@ -264,7 +268,7 @@ void UsbIpServer::UsbIpReplyImport(int clientSocketFd, unsigned char* buffer, in
 }
 
 void UsbIpServer::UsbIpUnlinkURB(int clientSocketFd, unsigned char* buffer, int len) {
-    INFO("Unlink URB Out [%d]", len);
+    DEBUG("Unlink URB Out [%d]", len);
     int seqNum = GetUint(buffer, 4, 4);
     int devId = GetUint(buffer, 8, 4);
     int ep = GetUint(buffer, 16, 4);
@@ -280,14 +284,14 @@ void UsbIpServer::UsbIpUnlinkURB(int clientSocketFd, unsigned char* buffer, int 
     pos += SetUint(0, tx_buffer, pos, 4);          /* 0x14 status */
     pos = 48;
 
-    INFO("Unlink URB Out [%d]", pos);
+    DEBUG("Unlink URB Out [%d]", pos);
     if (write(clientSocketFd, tx_buffer, pos) != pos) {
 	ERROR("Did not write full packet to socket");
     }
 }
 
 void UsbIpServer::UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int len) {
-    INFO("URB In [%d]", len);
+    DEBUG("URB In [%d]", len);
     int seqNum = GetUint(buffer, 4, 4);
     int devId = GetUint(buffer, 8, 4);
     int ep = GetUint(buffer, 16, 4);
@@ -296,15 +300,15 @@ void UsbIpServer::UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int 
     int startFrame = GetUint(buffer, 28, 4);
 
     int inOut = GetUint(buffer, 12, 4);
-    INFO("  URB: SeqNum %.8x DevId %.8x", seqNum, devId);
-    INFO("  URB: Flags %.4x EP%d IO=%d", transferFlags, ep, inOut);
-    INFO("  URB: TransferBufferLength %d", transferBufferLength);
+    DEBUG("  URB: SeqNum %.8x DevId %.8x", seqNum, devId);
+    DEBUG("  URB: Flags %.4x EP%d IO=%d", transferFlags, ep, inOut);
+    DEBUG("  URB: TransferBufferLength %d", transferBufferLength);
 
     // int nofPackets = GetUint(buffer, 32, 4);
     // int interval = GetUint(buffer, 36, 4);
-    // INFO("Seq=%d : Id=%d : I/O=%d : EP=%d : Flags=%d : BufLength=%d : StartFrame=%d : NofPackets=%d : Interval=%d", seqNum, devId, inOut, ep, flags, bufLength, startFrame, nofPackets, interval);
+    // DEBUG("Seq=%d : Id=%d : I/O=%d : EP=%d : Flags=%d : BufLength=%d : StartFrame=%d : NofPackets=%d : Interval=%d", seqNum, devId, inOut, ep, flags, bufLength, startFrame, nofPackets, interval);
 
-    INFO_VECTOR("USB Setup", &buffer[40], 8);
+    DEBUG_VECTOR("USB Setup", &buffer[40], 8);
 
     int status = 0;
     unsigned char usbReply[64];
@@ -313,15 +317,14 @@ void UsbIpServer::UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int 
 	status = usbdataLength;
 	switch(usbdataLength) {
 	case EP_STALL:
-	    INFO("USB Stall");
+	    DEBUG("USB Stall");
 	    break;
 	default:
-	    INFO("USB Error %d", usbdataLength);
+	    ERROR("USB Error %d", usbdataLength);
 	    break;
 	}
-	INFO("USBIP Status = %d", (unsigned int)status);
     } else {
-	INFO_VECTOR("USB Reply", usbReply, usbdataLength);
+	DEBUG_VECTOR("USB Reply", usbReply, usbdataLength);
     }
 
     unsigned char tx_buffer[512];
@@ -342,7 +345,7 @@ void UsbIpServer::UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int 
 	pos += AddData(usbReply, tx_buffer, pos, usbdataLength); /* Data */
     }
 
-    INFO("URB Out [%d]", pos);
+    DEBUG("URB Out [%d]", pos);
     if (write(clientSocketFd, tx_buffer, pos) != pos) {
 	ERROR("Did not write full packet to socket");
     }

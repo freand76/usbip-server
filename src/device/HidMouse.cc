@@ -78,7 +78,6 @@ int HidMouseInterface::GenerateHIDReportDescriptor(uint8_t* buffer, int offset) 
 
 int HidMouseInterface::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
     uint8_t bDescriptorType = setup[3];
-    INFO("UsbDevice: HidMouseInterfaceRequest %.2x", bDescriptorType);
 
     if (bDescriptorType == HID_MOUSE_REPORT_IDX) {
 	return GenerateHIDReportDescriptor(replyBuffer, 0);

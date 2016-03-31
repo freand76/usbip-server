@@ -32,6 +32,7 @@ public:
     void AddDevice(UsbDevice* dev, string path, string busId, int busNum, int devNum, enum usb_device_speed speed);
     bool Init();
     bool StartServer();
+    bool ConnectedClients();
     void StopServer();
     void ServerWorker();
     bool StartConnectionThread(int clientSocketFd);

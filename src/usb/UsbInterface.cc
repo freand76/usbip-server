@@ -75,7 +75,7 @@ int UsbInterface::InterfaceRequest(uint8_t* setup, uint8_t* data, uint8_t* reply
 
 int UsbInterface::OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
     uint8_t bRequest = setup[1];
-    INFO("UsbInterface: OutRequest %.2x", bRequest);
+    DEBUG("UsbInterface: OutRequest %.2x", bRequest);
 
     if (bRequest == 0x06) {
 	return GetDescriptor(setup, data, replyBuffer, bufLength);
@@ -88,7 +88,7 @@ int UsbInterface::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuf
     (void)data;
     (void)replyBuffer;
     (void)bufLength;
-    ERROR("Unkown GetDescriptor UsbInterface"); 
+    ERROR("Unkown GetDescriptor UsbInterface");
     return EP_STALL;
 }
 
@@ -96,6 +96,13 @@ int UsbInterface::InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer,
     (void)data;
     (void)replyBuffer;
     (void)bufLength;
+
+    uint8_t bRequest = setup[1];
+    if (bRequest == 0x0a) {
+	/* stall this request */
+	return EP_STALL;
+    }
+
     ERROR_VECTOR("Unkown InRequest UsbInterface", setup, 8);
     return EP_STALL;
 }

@@ -31,9 +31,11 @@ static volatile int keepRunning = 3;
 void intHandler(int) {
     static int panicCounter = 0;
     if (keepRunning == 3) {
-	fprintf(stderr, "Ctrl-C received, Do it 3 times if you reaaly want to quit");
-	fflush(stderr);
+	fprintf(stderr, "\nCtrl-C received, Do it 3 times if you reaaly want to quit\n");
+    } else {
+	fprintf(stderr, "\n");
     }
+    fflush(stderr);
 
     if (keepRunning > 0) {
 	keepRunning--;
@@ -89,7 +91,7 @@ int main(int argc, char* argv[]) {
     HidMouse mouse(0x00fa, 0xc001, 0x1234);
     test.AddDevice(&mouse, "My First Virtual Mouse", "1-1", 2, 3, USB_SPEED_FULL);
 
-    INFO("Starting server");
+    printf("Starting server\n");
     if (!test.StartServer()) {
 	ERROR("Could not start server");
 	return EXIT_FAILURE;
@@ -99,12 +101,17 @@ int main(int argc, char* argv[]) {
 	usleep(500*1000);
 	if (mouse.IsConnected()) {
 	    if (!mouse.Move(0, 20, 20)) {
-		printf(".\n");
+		printf("- Mouse event-queue overflow\n");
 	    }
 	}
     }
 
-    INFO("Stopping server");
+    printf("Stopping server:\n");
+    if (test.ConnectedClients()) {
+	printf("\n");
+	printf(" - Press Ctrl-C a couple of times if you do not want\n");
+	printf("   to wait for all clients to disconnect\n\n");
+    }
     test.StopServer();
 
     return EXIT_SUCCESS;

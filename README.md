@@ -12,7 +12,8 @@ The goal for this project is to implement a usbip-server that can handle USB dev
 ## Build
 - cd usbip-server
 - make
-- .x86/TestApp
+- .x86/TestApp --help
+- .x86/TestApp -vv
 
 ## Attach Virtual Device
 
@@ -24,6 +25,11 @@ The goal for this project is to implement a usbip-server that can handle USB dev
 
 ### Attach Virtual USB Device
 - sudo usbip attach -b 1-1 -r **host**
+
+## Current State
+- Handles 1 (one) device over the usbip protocol
+- USB Stack handles a single interrupt endpoint (at least)
+- A HID Mouse Device is implemented
 
 ## Todo
 - Handle several virtual USB devices in the UsbIpServer
