@@ -34,6 +34,9 @@ Playing around with kernel modules and Virtual USB devices can cause the kernel 
 ### Attach Virtual USB Device
 - sudo usbip attach -b 1-1 -r **host**
 
+### Detach Virtual USB Device
+- sudo usbip detach -p 0
+
 ## Current State
 - Handles 1 (one) device over the usbip protocol
 - USB Stack handles a single interrupt endpoint (at least)
