@@ -176,7 +176,10 @@ void UsbIpServer::ConnectionWorker(int clientSocketFd) {
 	    break;
 	}
     }
-    INFO("Client disconnect");
+
+    usbIpDevice.Disconnect();
+    INFO("Device Disconnected");
+
     close(clientSocketFd);
     activeClients--;
 }
@@ -192,8 +195,8 @@ void UsbIpServer::UsbIpProtocolHandler(int clientSocketFd, unsigned char* buffer
 	/* USBIP_CMD_SUBMIT */
 	UsbIpHandleURB(clientSocketFd, buffer, len);
 	return;
-    case 0x00000003:
-	ERROR("Unhandled Command %.8x", cmd);
+    case 0x00000002:
+	UsbIpUnlinkURB(clientSocketFd, buffer, len);
 	return;
     default:
 	break;
@@ -202,6 +205,7 @@ void UsbIpServer::UsbIpProtocolHandler(int clientSocketFd, unsigned char* buffer
     unsigned int version = GetUint(buffer, 0, 2);
     if (version != 0x111) {
 	ERROR("Wrong protocol version %.4x", version);
+	ERROR("  Unknown command %.8x", cmd);
 	return;
     }
     cmd = GetUint(buffer, 2, 2);
@@ -212,7 +216,7 @@ void UsbIpServer::UsbIpProtocolHandler(int clientSocketFd, unsigned char* buffer
 	UsbIpReplyDeviceList(clientSocketFd);
 	break;
     case 0x8003:
-	UspIpReplyImport(clientSocketFd, buffer, len);
+	UsbIpReplyImport(clientSocketFd, buffer, len);
 	break;
     default:
 	ERROR("Unknown command: %.4x\n", cmd);
@@ -238,7 +242,7 @@ void UsbIpServer::UsbIpReplyDeviceList(int clientSocketFd) {
     }
 }
 
-void UsbIpServer::UspIpReplyImport(int clientSocketFd, unsigned char* buffer, int len) {
+void UsbIpServer::UsbIpReplyImport(int clientSocketFd, unsigned char* buffer, int len) {
     unsigned char tx_buffer[512];
     memset(tx_buffer, 0, sizeof(tx_buffer));
 
@@ -259,6 +263,29 @@ void UsbIpServer::UspIpReplyImport(int clientSocketFd, unsigned char* buffer, in
     }
 }
 
+void UsbIpServer::UsbIpUnlinkURB(int clientSocketFd, unsigned char* buffer, int len) {
+    INFO("Unlink URB Out [%d]", len);
+    int seqNum = GetUint(buffer, 4, 4);
+    int devId = GetUint(buffer, 8, 4);
+    int ep = GetUint(buffer, 16, 4);
+
+    unsigned char tx_buffer[512];
+    memset(tx_buffer, 0, sizeof(tx_buffer));
+    int pos = 0;
+    pos += SetUint(0x00000004, tx_buffer, pos, 4); /* 0x00 Reply */
+    pos += SetUint(seqNum, tx_buffer, pos, 4);     /* 0x04 Seq */
+    pos += SetUint(devId, tx_buffer, pos, 4);      /* 0x08 devid */
+    pos += SetUint(0, tx_buffer, pos, 4);          /* 0x0c direction */
+    pos += SetUint(ep, tx_buffer, pos, 4);         /* 0x10 EP */
+    pos += SetUint(0, tx_buffer, pos, 4);          /* 0x14 status */
+    pos = 48;
+
+    INFO("Unlink URB Out [%d]", pos);
+    if (write(clientSocketFd, tx_buffer, pos) != pos) {
+	ERROR("Did not write full packet to socket");
+    }
+}
+
 void UsbIpServer::UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int len) {
     INFO("URB In [%d]", len);
     int seqNum = GetUint(buffer, 4, 4);
@@ -266,38 +293,54 @@ void UsbIpServer::UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int 
     int ep = GetUint(buffer, 16, 4);
     int transferFlags = GetUint(buffer, 20, 4);
     int transferBufferLength = GetUint(buffer, 24, 4);
+    int startFrame = GetUint(buffer, 28, 4);
 
+    int inOut = GetUint(buffer, 12, 4);
     INFO("  URB: SeqNum %.8x DevId %.8x", seqNum, devId);
-    INFO("  URB: Flags %.4x EP%d ", transferFlags, ep);
+    INFO("  URB: Flags %.4x EP%d IO=%d", transferFlags, ep, inOut);
     INFO("  URB: TransferBufferLength %d", transferBufferLength);
 
-    // int inOut = GetUint(buffer, 12, 4);
-    // int startFrame = GetUint(buffer, 28, 4);
     // int nofPackets = GetUint(buffer, 32, 4);
     // int interval = GetUint(buffer, 36, 4);
     // INFO("Seq=%d : Id=%d : I/O=%d : EP=%d : Flags=%d : BufLength=%d : StartFrame=%d : NofPackets=%d : Interval=%d", seqNum, devId, inOut, ep, flags, bufLength, startFrame, nofPackets, interval);
 
     INFO_VECTOR("USB Setup", &buffer[40], 8);
 
+    int status = 0;
     unsigned char usbReply[64];
-    int usbdataLength = usbIpDevice.TxRx(&buffer[40], &buffer[48], usbReply, transferBufferLength);
-    INFO_VECTOR("USB Reply", usbReply, usbdataLength);
+    int usbdataLength = usbIpDevice.TxRx(ep, &buffer[40], &buffer[48], usbReply, transferBufferLength);
+    if (usbdataLength < 0) {
+	status = usbdataLength;
+	switch(usbdataLength) {
+	case EP_STALL:
+	    INFO("USB Stall");
+	    break;
+	default:
+	    INFO("USB Error %d", usbdataLength);
+	    break;
+	}
+	INFO("USBIP Status = %d", (unsigned int)status);
+    } else {
+	INFO_VECTOR("USB Reply", usbReply, usbdataLength);
+    }
 
     unsigned char tx_buffer[512];
     memset(tx_buffer, 0, sizeof(tx_buffer));
     int pos = 0;
-    pos += SetUint(0x00000003, tx_buffer, pos, 4); /* Reply */
-    pos += SetUint(seqNum, tx_buffer, pos, 4);     /* Seq */
-    pos += SetUint(0, tx_buffer, pos, 4);          /* devid */
-    pos += SetUint(0, tx_buffer, pos, 4);          /* direction */
-    pos += SetUint(ep, tx_buffer, pos, 4);         /* EP */
-    pos += SetUint(0, tx_buffer, pos, 4);          /* status */
-    pos += SetUint(usbdataLength, tx_buffer, pos, 4); /* Length */
-    pos += SetUint(0, tx_buffer, pos, 4);          /* Start Frame */
-    pos += SetUint(0, tx_buffer, pos, 4);          /* NumberOfPackets */
-    pos += SetUint(0, tx_buffer, pos, 4);          /* Error Count */
-    pos += SetUint(0, tx_buffer, pos, 8);          /* Setup */
-    pos += AddData(usbReply, tx_buffer, pos, usbdataLength); /* Data */
+    pos += SetUint(0x00000003, tx_buffer, pos, 4); /* 0x00 Reply */
+    pos += SetUint(seqNum, tx_buffer, pos, 4);     /* 0x04 Seq */
+    pos += SetUint(devId, tx_buffer, pos, 4);          /* 0x08 devid */
+    pos += SetUint(0, tx_buffer, pos, 4);          /* 0x0c direction */
+    pos += SetUint(ep, tx_buffer, pos, 4);         /* 0x10 EP */
+    pos += SetUint(status, tx_buffer, pos, 4);          /* 0x14 status */
+    pos += SetUint(usbdataLength, tx_buffer, pos, 4); /* 0x18 Length */
+    pos += SetUint(startFrame, tx_buffer, pos, 4);          /* 0x1c Start Frame */
+    pos += SetUint(0, tx_buffer, pos, 4);          /* 0x20 NumberOfPackets */
+    pos += SetUint(0, tx_buffer, pos, 4);          /* 0x24 Error Count */
+    pos += SetUint(0, tx_buffer, pos, 8);          /* 0x28 Setup */
+    if (usbdataLength > 0) {
+	pos += AddData(usbReply, tx_buffer, pos, usbdataLength); /* Data */
+    }
 
     INFO("URB Out [%d]", pos);
     if (write(clientSocketFd, tx_buffer, pos) != pos) {

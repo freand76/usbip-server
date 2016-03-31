@@ -35,10 +35,13 @@ public:
                        int offset,
                        bool withInterfaces);
 
-    int TxRx(unsigned char* setupBuffer,
+    int TxRx(int endPoint,
+             unsigned char* setupBuffer,
              unsigned char* dataBuffer,
              unsigned char* outBuffer,
              int outBufferLength);
+
+    void Disconnect();
 
 private:
     int CopyString(char* str, int length, unsigned char* buffer, int offset);

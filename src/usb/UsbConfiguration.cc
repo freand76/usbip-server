@@ -12,6 +12,8 @@
 	http://github.com/freand76/usbip-server
 ********************************************************/
 
+#include <string.h>
+#include "UsbDevice.h"
 #include "UsbConfiguration.h"
 #include "UsbUtil.h"
 
@@ -31,7 +33,7 @@ UsbConfiguration::UsbConfiguration(uint8_t bConfigurationValue,
     this->interfaceArray = interfaceArray;
 }
 
-int UsbConfiguration::GenerateConfigurationDescriptor(unsigned char* buffer, int offset) {
+int UsbConfiguration::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
     int pos = offset;
 
     pos += SetUint(9,                   buffer, pos, 1);
@@ -50,4 +52,14 @@ int UsbConfiguration::GenerateConfigurationDescriptor(unsigned char* buffer, int
     /* Set total size */
     SetUint(pos, buffer, 2, 2);
     return pos-offset;
+}
+
+UsbEndpoint* UsbConfiguration::GetEndpoint(uint8_t endpointAddress) {
+    for (int idx = 0; idx < bNumInterfaces; idx++) {
+	UsbEndpoint* endpoint = interfaceArray[idx]->GetEndpoint(endpointAddress);
+	if (endpoint != NULL) {
+	    return endpoint;
+	}
+    }
+    return NULL;
 }

@@ -23,7 +23,7 @@ using namespace Verbose;
 
 #define HID_MOUSE_REPORT_IDX 34
 
-int HidMouseInterface::GenerateConfigurationDescriptor(unsigned char* buffer, int offset) {
+int HidMouseInterface::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
     int pos = offset;
     pos += UsbInterface::GenerateConfigurationDescriptor(buffer, pos);
     int rSize = GenerateHIDReportDescriptor(NULL, 0);
@@ -39,7 +39,7 @@ int HidMouseInterface::GenerateConfigurationDescriptor(unsigned char* buffer, in
     return pos - offset;
 }
 
-static unsigned char reportDescriptorHID[] = {
+static uint8_t reportDescriptorHID[] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
     0x09, 0x02,                    // USAGE (Mouse)
     0xa1, 0x01,                    // COLLECTION (Application)
@@ -68,7 +68,7 @@ static unsigned char reportDescriptorHID[] = {
     0xc0
 };
 
-int HidMouseInterface::GenerateHIDReportDescriptor(unsigned char* buffer, int offset) {
+int HidMouseInterface::GenerateHIDReportDescriptor(uint8_t* buffer, int offset) {
     int pos = offset;
     for (unsigned int idx = 0; idx < sizeof(reportDescriptorHID); idx++) {
 	pos += SetUint(reportDescriptorHID[idx], buffer, pos, 1);
@@ -76,22 +76,40 @@ int HidMouseInterface::GenerateHIDReportDescriptor(unsigned char* buffer, int of
     return pos-offset;
 }
 
-int HidMouseInterface::InterfaceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength) {
-    (void)data;
-    (void)bufLength;
-
-    uint8_t bmRequestType = setup[0];
+int HidMouseInterface::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
     uint8_t bDescriptorType = setup[3];
-    int pos = 0;
-
     INFO("UsbDevice: HidMouseInterfaceRequest %.2x", bDescriptorType);
 
-    if (bmRequestType & 0x80) {
-	/* OutRequest*/
-	if (bDescriptorType == HID_MOUSE_REPORT_IDX) {
-	    pos += GenerateHIDReportDescriptor(replyBuffer, pos);
-	    INFO_VECTOR("ConfigurationDescriptor", replyBuffer, pos);
-	}
+    if (bDescriptorType == HID_MOUSE_REPORT_IDX) {
+	return GenerateHIDReportDescriptor(replyBuffer, 0);
     }
-    return pos;
+
+    return UsbInterface::GetDescriptor(setup, data, replyBuffer, bufLength);
+}
+
+int HidMouseEndpoint::Data(uint8_t* inData, uint8_t* outBuffer, int length) {
+    (void)inData;
+    (void)length;
+
+    outBuffer[0] = event.but;
+    outBuffer[1] = event.x;
+    outBuffer[2] = event.y;
+
+    event.but = 0;
+    event.x = 0;
+    event.y = 0;
+    event.free = true;
+
+    return 3;
+}
+
+bool HidMouse::Move(int but, int x, int y) {
+    if (endpoint.event.free) {
+	endpoint.event.but = but;
+	endpoint.event.x = x;
+	endpoint.event.y = y;
+	endpoint.event.free = false;
+	return true;
+    }
+    return false;
 }

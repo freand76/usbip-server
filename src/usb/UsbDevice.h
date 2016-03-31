@@ -18,6 +18,8 @@
 #include <stdint.h>
 #include "UsbConfiguration.h"
 
+#define EP_STALL (-32)
+
 class UsbDevice {
 public:
     UsbDevice(uint16_t idVendor,
@@ -29,12 +31,17 @@ public:
               uint8_t bNumConfigurations,
               UsbConfiguration** configurationArray);
 
-    int TxRx(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
-    int OutRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
-    int InRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
-    int DeviceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
-    int InterfaceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
+    int TxRx(uint8_t endpoint, uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength);
+    int DeviceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength);
+    int InterfaceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength);
+    int OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength);
+    int GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength);
 
+    int InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength);
+    void Disconnect();
+    bool IsConnected() { return deviceConnected; };
+
+    bool deviceConnected;
     uint16_t idVendor;
     uint16_t idProduct;
     uint16_t bcdDevice;

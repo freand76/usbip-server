@@ -9,13 +9,28 @@
  remains intact.
 
  code repository located at:
-	http://github.com/freand76/usbip-server
+        http://github.com/freand76/usbip-server
 ********************************************************/
 
 #include "UsbDevice.h"
 #include "UsbConfiguration.h"
 #include "UsbInterface.h"
 #include "UsbEndpoint.h"
+
+typedef struct  {
+    bool free;
+    int but;
+    int x;
+    int y;
+} MouseEvent_t;
+
+
+class HidMouseEndpoint : public UsbEndpoint {
+public:
+    HidMouseEndpoint() : UsbEndpoint(0x81, 3, 64, 255) {};
+    int Data(uint8_t* inData, uint8_t* outBuffer, int length);
+    MouseEvent_t event = { true, 0, 0, 0 };
+};
 
 class HidMouseInterface : public UsbInterface {
 public:
@@ -24,11 +39,11 @@ public:
                       UsbEndpoint** endpointArray) :
     UsbInterface(bInterfaceNumber, 0, 3, 1, 2, 0, bNumEndpoints, endpointArray) {
     };
-    int GenerateConfigurationDescriptor(unsigned char* buffer, int offset);
-    int InterfaceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
+    int GenerateConfigurationDescriptor(uint8_t* buffer, int offset);
+    int GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength);
 
 private:
-    int GenerateHIDReportDescriptor(unsigned char* buffer, int offset);
+    int GenerateHIDReportDescriptor(uint8_t* buffer, int offset);
 };
 
 class HidMouse : public UsbDevice {
@@ -39,7 +54,9 @@ public:
     UsbDevice(vid, pid, bcdVer, 0, 0, 0, 1, configurationList) {
     };
 
-    UsbEndpoint endpoint = { 0x81, 3, 64, 10 };
+    bool Move(int but, int x, int y);
+private:
+    HidMouseEndpoint endpoint;
     UsbEndpoint* endpointList[1] = { &endpoint };
     HidMouseInterface interface = { 0, 1, endpointList };
     UsbInterface* interfaceList[1] = { &interface };

@@ -39,7 +39,8 @@ public:
 private:
     void UsbIpProtocolHandler(int clientSocketFd, unsigned char* buffer, int len);
     void UsbIpReplyDeviceList(int clientSocketFd);
-    void UspIpReplyImport(int clientSocketFd, unsigned char* buffer, int len);
+    void UsbIpReplyImport(int clientSocketFd, unsigned char* buffer, int len);
+    void UsbIpUnlinkURB(int clientSocketFd, unsigned char* buffer, int len);
     void UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int len);
 
     std::thread* serverThread;

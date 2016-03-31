@@ -76,6 +76,14 @@ int UsbIpDevice::CopyString(char* str, int length, unsigned char* buffer, int of
     return length;
 }
 
-int UsbIpDevice::TxRx(unsigned char* setupBuffer, unsigned char* dataBuffer, unsigned char* outBuffer, int outBufferLength) {
-    return d->TxRx(setupBuffer, dataBuffer, outBuffer, outBufferLength);
+int UsbIpDevice::TxRx(int endPoint,
+		      unsigned char* setupBuffer,
+		      unsigned char* dataBuffer,
+		      unsigned char* outBuffer,
+		      int outBufferLength) {
+    return d->TxRx(endPoint, setupBuffer, dataBuffer, outBuffer, outBufferLength);
+}
+
+void UsbIpDevice::Disconnect() {
+    d->Disconnect();
 }

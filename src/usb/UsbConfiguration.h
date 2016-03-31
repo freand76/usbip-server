@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include "UsbInterface.h"
+#include "UsbEndpoint.h"
 
 class UsbConfiguration {
 public:
@@ -27,7 +28,8 @@ public:
                      uint8_t bNumInterfaces,
                      UsbInterface** interfaceArray);
 
-    int GenerateConfigurationDescriptor(unsigned char* buffer, int offset);
+    int GenerateConfigurationDescriptor(uint8_t* buffer, int offset);
+    UsbEndpoint* GetEndpoint(uint8_t endpointAddress);
 
     uint8_t bNumInterfaces;
     uint8_t bConfigurationValue;

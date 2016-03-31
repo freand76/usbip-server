@@ -12,11 +12,15 @@
 	http://github.com/freand76/usbip-server
 ********************************************************/
 
+#include "UsbDevice.h"
 #include "UsbEndpoint.h"
 #include "UsbInterface.h"
 #include "UsbUtil.h"
 
 using namespace UsbUtil;
+
+#include "Verbose.h"
+using namespace Verbose;
 
 UsbInterface::UsbInterface(uint8_t bInterfaceNumber,
 			   uint8_t bAlternateSetting,
@@ -36,7 +40,7 @@ UsbInterface::UsbInterface(uint8_t bInterfaceNumber,
     this->endpointArray = endpointArray;
 }
 
-int UsbInterface::GenerateConfigurationDescriptor(unsigned char* buffer, int offset) {
+int UsbInterface::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
     int pos = offset;
 
     pos += SetUint(9,                  buffer, pos, 1);
@@ -55,11 +59,52 @@ int UsbInterface::GenerateConfigurationDescriptor(unsigned char* buffer, int off
     return pos-offset;
 }
 
-int UsbInterface::InterfaceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength) {
+int UsbInterface::InterfaceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
+    uint8_t bmRequestType = setup[0];
+    int bfDataDirection = bmRequestType & 0x80;
+    if (bfDataDirection) {
+	/* OutRequest */
+	return OutRequest(setup, data, replyBuffer, bufLength);
+    } else {
+	/* InRequest */
+	return InRequest(setup, data, replyBuffer, bufLength);
+    }
+
+    return EP_STALL;
+}
+
+int UsbInterface::OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
+    uint8_t bRequest = setup[1];
+    INFO("UsbInterface: OutRequest %.2x", bRequest);
+
+    if (bRequest == 0x06) {
+	return GetDescriptor(setup, data, replyBuffer, bufLength);
+    }
+    return EP_STALL;
+}
+
+int UsbInterface::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
     (void)setup;
     (void)data;
     (void)replyBuffer;
     (void)bufLength;
+    ERROR("Unkown GetDescriptor UsbInterface"); 
+    return EP_STALL;
+}
 
-    return 0;
+int UsbInterface::InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
+    (void)data;
+    (void)replyBuffer;
+    (void)bufLength;
+    ERROR_VECTOR("Unkown InRequest UsbInterface", setup, 8);
+    return EP_STALL;
+}
+
+UsbEndpoint* UsbInterface::GetEndpoint(uint8_t endpointAddress) {
+    for (int idx = 0; idx < bNumEndpoints; idx++) {
+	if ((endpointArray[idx]->bEndpointAddress & 0x7f) == endpointAddress) {
+	    return endpointArray[idx];
+	}
+    }
+    return NULL;
 }

@@ -27,7 +27,7 @@ UsbEndpoint::UsbEndpoint(uint8_t bEndpointAddress,
     this->bInterval = bInterval;
 }
 
-int UsbEndpoint::GenerateConfigurationDescriptor(unsigned char* buffer, int offset) {
+int UsbEndpoint::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
     int pos = offset;
 
     pos += SetUint(7,                buffer, pos, 1);
