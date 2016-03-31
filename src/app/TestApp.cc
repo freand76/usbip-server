@@ -29,12 +29,18 @@ using namespace Verbose;
 static volatile int keepRunning = 3;
 
 void intHandler(int) {
+    static int panicCounter = 0;
     if (keepRunning == 3) {
 	INFO("Ctrl-C received, Do it 3 times if you reaaly want to quit");
     }
 
     if (keepRunning > 0) {
 	keepRunning--;
+    } else {
+	panicCounter++;
+	if (panicCounter == 5) {
+	    exit(0);
+	}
     }
 }
 
@@ -71,7 +77,7 @@ int main(int argc, char* argv[]) {
 
     unsigned char buffer[512];
     memset(buffer, 0, 512);
-    int size = mouse.configurationList[0]->GenerateDescriptor(buffer, 0);
+    int size = mouse.configurationList[0]->GenerateConfigurationDescriptor(buffer, 0);
     INFO_VECTOR("ConfigurationDescriptor", buffer, size);
 
 

@@ -29,7 +29,8 @@ public:
                  uint8_t bNumEndpoints,
                  UsbEndpoint** endpointArray);
 
-    int GenerateDescriptor(unsigned char* buffer, int offset);
+    virtual int GenerateConfigurationDescriptor(unsigned char* buffer, int offset);
+    virtual int InterfaceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
 
     uint8_t bInterfaceNumber;
     uint8_t bAlternateSetting;

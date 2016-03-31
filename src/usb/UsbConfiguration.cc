@@ -31,21 +31,23 @@ UsbConfiguration::UsbConfiguration(uint8_t bConfigurationValue,
     this->interfaceArray = interfaceArray;
 }
 
-int UsbConfiguration::GenerateDescriptor(unsigned char* buffer, int offset) {
-    buffer[0] = 9;
-    buffer[1] = 2;
-    buffer[4] = bNumInterfaces;
-    buffer[5] = bConfigurationValue;
-    buffer[6] = iConfiguration;
-    buffer[7] = bmAttributes;
-    buffer[8] = bMaxPower;
+int UsbConfiguration::GenerateConfigurationDescriptor(unsigned char* buffer, int offset) {
+    int pos = offset;
 
-    int pos = 9;
+    pos += SetUint(9,                   buffer, pos, 1);
+    pos += SetUint(2,                   buffer, pos, 1);
+    pos += SetUint(0,                   buffer, pos, 2); /* total size will be filed later */
+    pos += SetUint(bNumInterfaces,      buffer, pos, 1);
+    pos += SetUint(bConfigurationValue, buffer, pos, 1);
+    pos += SetUint(iConfiguration,      buffer, pos, 1);
+    pos += SetUint(bmAttributes,        buffer, pos, 1);
+    pos += SetUint(bMaxPower,           buffer, pos, 1);
+
     for (int idx = 0; idx < bNumInterfaces; idx++) {
-	pos += interfaceArray[idx]->GenerateDescriptor(buffer, offset + pos);
+	pos += interfaceArray[idx]->GenerateConfigurationDescriptor(buffer, offset + pos);
     }
 
     /* Set total size */
     SetUint(pos, buffer, 2, 2);
-    return pos;
+    return pos-offset;
 }

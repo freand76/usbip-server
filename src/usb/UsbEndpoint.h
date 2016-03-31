@@ -23,7 +23,7 @@ public:
                 uint8_t bmAttributes,
                 uint16_t wMaxPacketSize,
                 uint8_t bInterval);
-    int GenerateDescriptor(unsigned char* buffer, int offset);
+    int GenerateConfigurationDescriptor(unsigned char* buffer, int offset);
 
     uint8_t bEndpointAddress;
     uint8_t bmAttributes;

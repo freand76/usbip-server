@@ -16,6 +16,7 @@
 #define USB_UTIL_H
 
 namespace UsbUtil {
+    unsigned int GetUint(unsigned char* buffer, int offset, int byteWidth);
     int SetUint(unsigned int value, unsigned char* buffer, int offset, int byteWidth);
 };
 

@@ -27,7 +27,7 @@ public:
                      uint8_t bNumInterfaces,
                      UsbInterface** interfaceArray);
 
-    int GenerateDescriptor(unsigned char* buffer, int offset);
+    int GenerateConfigurationDescriptor(unsigned char* buffer, int offset);
 
     uint8_t bNumInterfaces;
     uint8_t bConfigurationValue;

@@ -50,11 +50,13 @@ int UsbDevice::TxRx(unsigned char* setup, unsigned char* data, unsigned char* re
 
 int UsbDevice::OutRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength) {
     INFO("UsbDevice: OutRequest");
-    //int type = (setup[0] & 0x60) >> 5;
-    int recipient = setup[0] & 0x05;
+    uint8_t bmRequestType = setup[0];
+    int recipient = bmRequestType & 0x05;
 
     if (recipient == 0) {
 	return DeviceRequest(setup, data, replyBuffer, bufLength);
+    } else if (recipient == 1) {
+	return InterfaceRequest(setup, data, replyBuffer, bufLength);
     } else {
 	ERROR("UsbDevice: Out Recipient %d", recipient);
     }
@@ -62,18 +64,20 @@ int UsbDevice::OutRequest(unsigned char* setup, unsigned char* data, unsigned ch
 }
 
 int UsbDevice::InRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength) {
-    INFO("UsbDevice: InRequest");
     (void)data;
     (void)replyBuffer;
     (void)bufLength;
 
-    int bRequest = setup[1];
-    int reqIndex =  setup[2] | (setup[3] << 8);
+    uint8_t bRequest = setup[1];
+    INFO("UsbDevice: InRequest %.2x", bRequest);
 
     switch(bRequest) {
     case 0x09:
-	INFO("UsbDevice: Set Configuration: %d", reqIndex);
+    {
+	int configrationValue = GetUint(setup, 2, 2);
+	INFO("UsbDevice: Set Configuration: %d", configrationValue);
 	break;
+    }
     }
 
     return 0;
@@ -121,9 +125,8 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
 	    // [ 5787.497792] usb 8-1: config 1 interface 1 altsetting 0 bulk endpoint 0x82 has invalid maxpacket 64
 
 	    pos = 0;
-	    for (int idx = 0; idx < bNumConfigurations; idx++) {
-		pos += configurationArray[idx]->GenerateDescriptor(replyBuffer, pos);
-	    }
+	    /* Handle several configurations one day maybe? */
+	    pos += configurationArray[0]->GenerateConfigurationDescriptor(replyBuffer, pos);
 	    packetSize = pos;
 	    break;
 	case 0x06:
@@ -151,4 +154,17 @@ int UsbDevice::DeviceRequest(unsigned char* setup, unsigned char* data, unsigned
 	INFO("Trunc package: %d", packetSize);
     }
     return packetSize;
+}
+
+int UsbDevice::InterfaceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength) {
+    int bRequest = setup[1];
+    INFO("UsbDevice: InterfaceRequest %.2x", bRequest);
+
+    if (bRequest == 0x06) {
+	uint8_t bDescriptorIndex = setup[2];
+	if (bDescriptorIndex < configurationArray[0]->bNumInterfaces) {
+	    return configurationArray[0]->interfaceArray[bDescriptorIndex]->InterfaceRequest(setup, data, replyBuffer, bufLength);
+	}
+    }
+    return 0;
 }

@@ -12,14 +12,27 @@
 	http://github.com/freand76/usbip-server
 ********************************************************/
 
+#include <stddef.h>
 #include "UsbUtil.h"
 
 namespace UsbUtil {
-    int SetUint(unsigned int value, unsigned char* buffer, int offset, int byteWidth) {
-	int val = value;
+    unsigned int GetUint(unsigned char* buffer, int offset, int byteWidth) {
+	unsigned int res = 0;
 	for (int idx = 0; idx < byteWidth; idx++) {
-	    buffer[offset + idx] = val & 0xff;
-	    val = val >> 8;
+	    unsigned int val = buffer[offset + idx];
+	    res = res >> 8;
+	    res = res | (val << (byteWidth-1));
+	}
+	return res;
+    };
+
+    int SetUint(unsigned int value, unsigned char* buffer, int offset, int byteWidth) {
+	if (buffer != NULL) {
+	    int val = value;
+	    for (int idx = 0; idx < byteWidth; idx++) {
+		buffer[offset + idx] = val & 0xff;
+		val = val >> 8;
+	    }
 	}
 	return byteWidth;
     }

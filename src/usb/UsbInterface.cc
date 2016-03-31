@@ -14,6 +14,9 @@
 
 #include "UsbEndpoint.h"
 #include "UsbInterface.h"
+#include "UsbUtil.h"
+
+using namespace UsbUtil;
 
 UsbInterface::UsbInterface(uint8_t bInterfaceNumber,
 			   uint8_t bAlternateSetting,
@@ -33,20 +36,30 @@ UsbInterface::UsbInterface(uint8_t bInterfaceNumber,
     this->endpointArray = endpointArray;
 }
 
-int UsbInterface::GenerateDescriptor(unsigned char* buffer, int offset) {
-    buffer[offset + 0] = 9;
-    buffer[offset + 1] = 4;
-    buffer[offset + 2] = bInterfaceNumber;
-    buffer[offset + 3] = bAlternateSetting;
-    buffer[offset + 4] = bNumEndpoints;
-    buffer[offset + 5] = bInterfaceClass;
-    buffer[offset + 6] = bInterfaceSubClass;
-    buffer[offset + 7] = bInterfaceProtocol;
-    buffer[offset + 8] = iInterface;
+int UsbInterface::GenerateConfigurationDescriptor(unsigned char* buffer, int offset) {
+    int pos = offset;
 
-    int pos = 9;
+    pos += SetUint(9,                  buffer, pos, 1);
+    pos += SetUint(4,                  buffer, pos, 1);
+    pos += SetUint(bInterfaceNumber,   buffer, pos, 1);
+    pos += SetUint(bAlternateSetting,  buffer, pos, 1);
+    pos += SetUint(bNumEndpoints,      buffer, pos, 1);
+    pos += SetUint(bInterfaceClass,    buffer, pos, 1);
+    pos += SetUint(bInterfaceSubClass, buffer, pos, 1);
+    pos += SetUint(bInterfaceProtocol, buffer, pos, 1);
+    pos += SetUint(iInterface,         buffer, pos, 1);
+
     for (int idx = 0; idx < bNumEndpoints; idx++) {
-	pos += endpointArray[idx]->GenerateDescriptor(buffer, offset + pos);
+	pos += endpointArray[idx]->GenerateConfigurationDescriptor(buffer, pos);
     }
-    return pos;
+    return pos-offset;
+}
+
+int UsbInterface::InterfaceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength) {
+    (void)setup;
+    (void)data;
+    (void)replyBuffer;
+    (void)bufLength;
+
+    return 0;
 }

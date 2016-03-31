@@ -33,6 +33,7 @@ public:
     int OutRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
     int InRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
     int DeviceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
+    int InterfaceRequest(unsigned char* setup, unsigned char* data, unsigned char* replyBuffer, int bufLength);
 
     uint16_t idVendor;
     uint16_t idProduct;
