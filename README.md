@@ -9,6 +9,14 @@ The goal for this project is to implement a usbip-server that can handle USB dev
 - linux kernel >= 3.17
 - package linux-tools-generic [apt-get install linux-tools-generic]
 
+## Disclaimer
+
+!!! WARNING !!!
+
+Playing around with kernel modules and Virtual USB devices can cause the kernel to hang!
+
+!!! WARNING !!!
+
 ## Build
 - cd usbip-server
 - make

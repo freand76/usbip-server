@@ -31,7 +31,7 @@ static volatile int keepRunning = 3;
 void intHandler(int) {
     static int panicCounter = 0;
     if (keepRunning == 3) {
-	fprintf(stderr, "\nCtrl-C received, Do it 3 times if you reaaly want to quit\n");
+	fprintf(stderr, "\nCtrl-C received, Do it 3 times if you really want to quit\n");
     } else {
 	fprintf(stderr, "\n");
     }
@@ -101,7 +101,9 @@ int main(int argc, char* argv[]) {
 	usleep(500*1000);
 	if (mouse.IsConnected()) {
 	    if (!mouse.Move(0, 20, 20)) {
-		printf("- Mouse event-queue overflow\n");
+		INFO("- Mouse event-queue overflow\n");
+	    } else {
+		INFO("- Mouse move");
 	    }
 	}
     }
