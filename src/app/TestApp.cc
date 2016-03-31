@@ -31,7 +31,8 @@ static volatile int keepRunning = 3;
 void intHandler(int) {
     static int panicCounter = 0;
     if (keepRunning == 3) {
-	INFO("Ctrl-C received, Do it 3 times if you reaaly want to quit");
+	fprintf(stderr, "Ctrl-C received, Do it 3 times if you reaaly want to quit");
+	fflush(stderr);
     }
 
     if (keepRunning > 0) {
@@ -44,13 +45,38 @@ void intHandler(int) {
     }
 }
 
+bool findArgument(const char* arg, int argc, char* argv[]) {
+    for (int idx = 0; idx < argc; idx++) {
+	if (strcmp(arg, argv[idx]) == 0) {
+	    return true;
+	}
+    }
+    return false;
+}
+
 int main(int argc, char* argv[]) {
+    if (findArgument("-h", argc, argv) || findArgument("--help", argc, argv)) {
+	printf("Usage:\n");
+	printf("-h / --help     - Help text\n");
+	printf("-v              - Verbose [INFO]\n");
+	printf("-vv             - Verbose [DEBUG]\n");
+	printf("\n");
+	exit(0);
+    }
+
+    if (findArgument("-v", argc, argv)) {
+	SetVerboseLevel(LEVEL_INFO);
+    }
+
+    if (findArgument("-vv", argc, argv)) {
+	SetVerboseLevel(LEVEL_DEBUG);
+    }
+
     signal(SIGINT, intHandler);
 
-    SetVerboseLevel(LEVEL_INFO);
     INFO("Command: %s", argv[0]);
     for (int idx = 1; idx < argc; idx++) {
-	INFO("  arg%d = %s", idx, argv[idx]);
+	DEBUG("  arg%d = %s", idx, argv[idx]);
     }
 
     UsbIpServer test;

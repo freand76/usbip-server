@@ -29,6 +29,8 @@ namespace Verbose {
     void ERROR_VECTOR(const char* name, unsigned char* vector, int size);
     void INFO(const char* format, ...);
     void INFO_VECTOR(const char* name, unsigned char* vector, int size);
+    void DEBUG(const char* format, ...);
+    void DEBUG_VECTOR(const char* name, unsigned char* vector, int size);
 };
 
 #endif // VERBOSE_H
