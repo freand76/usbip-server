@@ -38,11 +38,13 @@ public:
     bool StartConnectionThread(int clientSocketFd);
     void ConnectionWorker(int clientSocketFd);
 private:
-    void UsbIpProtocolHandler(int clientSocketFd, unsigned char* buffer, int len);
-    void UsbIpReplyDeviceList(int clientSocketFd);
-    void UsbIpReplyImport(int clientSocketFd, unsigned char* buffer, int len);
-    void UsbIpUnlinkURB(int clientSocketFd, unsigned char* buffer, int len);
-    void UsbIpHandleURB(int clientSocketFd, unsigned char* buffer, int len);
+    unsigned int TcpRead(int clientSocketFd, uint8_t* buffer, unsigned int readSize);
+
+    uint8_t* UsbIpReplyDeviceList(int& txSize);
+    uint8_t* UsbIpReplyImport(int clientSocketFd, int& txSize);
+    uint8_t* UsbIpCommandHandler(int clientSocketFd, uint8_t* cmdHeadBuffer, int& txSize);
+    uint8_t* UsbIpUnlinkURB(uint8_t* cmdHeadBuffer, int& txSize);
+    uint8_t* UsbIpHandleURB(int clientSocketFd, uint8_t* cmdHeadBuffer, int& txSize);
 
     std::thread* serverThread;
     std::vector<std::thread*> connectionThreads;

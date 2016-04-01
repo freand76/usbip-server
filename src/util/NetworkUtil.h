@@ -15,10 +15,12 @@
 #ifndef NETWORK_UTIL_H
 #define NETWORK_UTIL_H
 
+#include <stdint.h>
+
 namespace NetworkUtil {
-    unsigned int GetUint(unsigned char* buffer, int offset, int byteWidth);
-    int SetUint(unsigned int value, unsigned char* buffer, int offset, int byteWidth);
-    int AddData(unsigned char* data, unsigned char* buffer, int offset, int len);
+    unsigned int GetUint(uint8_t* buffer, int offset, int byteWidth);
+    int SetUint(unsigned int value, uint8_t* buffer, int offset, int byteWidth);
+    int AddData(uint8_t* data, uint8_t* buffer, int offset, int len);
 };
 
 #endif // NETWORK_UTIL_H

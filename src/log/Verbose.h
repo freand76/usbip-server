@@ -26,11 +26,11 @@ namespace Verbose {
 
     void SetVerboseLevel(VerboseLogLevel_t level);
     void ERROR(const char* format, ...);
-    void ERROR_VECTOR(const char* name, unsigned char* vector, int size);
+    void ERROR_VECTOR(const char* name, uint8_t* vector, int size);
     void INFO(const char* format, ...);
-    void INFO_VECTOR(const char* name, unsigned char* vector, int size);
+    void INFO_VECTOR(const char* name, uint8_t* vector, int size);
     void DEBUG(const char* format, ...);
-    void DEBUG_VECTOR(const char* name, unsigned char* vector, int size);
+    void DEBUG_VECTOR(const char* name, uint8_t* vector, int size);
 };
 
 #endif // VERBOSE_H

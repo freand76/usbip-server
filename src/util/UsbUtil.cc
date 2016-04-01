@@ -16,7 +16,7 @@
 #include "UsbUtil.h"
 
 namespace UsbUtil {
-    unsigned int GetUint(unsigned char* buffer, int offset, int byteWidth) {
+    unsigned int GetUint(uint8_t* buffer, int offset, int byteWidth) {
 	unsigned int res = 0;
 	for (int idx = 0; idx < byteWidth; idx++) {
 	    unsigned int val = buffer[offset + idx];
@@ -26,7 +26,7 @@ namespace UsbUtil {
 	return res;
     };
 
-    int SetUint(unsigned int value, unsigned char* buffer, int offset, int byteWidth) {
+    int SetUint(unsigned int value, uint8_t* buffer, int offset, int byteWidth) {
 	if (buffer != NULL) {
 	    int val = value;
 	    for (int idx = 0; idx < byteWidth; idx++) {

@@ -20,6 +20,9 @@
 
 #include "UsbDevice.h"
 
+#define USBIP_PATH_STR_LENGTH 256
+#define USBIP_BUSID_STR_LENGTH 32
+
 using namespace std;
 
 class UsbIpDevice {
@@ -31,27 +34,27 @@ public:
                 int devNum = 0,
                 enum usb_device_speed speed = USB_SPEED_HIGH);
 
-    int FillDeviceData(unsigned char* buffer,
+    int FillDeviceData(uint8_t* buffer,
                        int offset,
                        bool withInterfaces);
 
     int TxRx(int endPoint,
-             unsigned char* setupBuffer,
-             unsigned char* dataBuffer,
-             unsigned char* outBuffer,
+             uint8_t* setupBuffer,
+             uint8_t* dataBuffer,
+             uint8_t* outBuffer,
              int outBufferLength);
 
     void Disconnect();
 
 private:
-    int CopyString(char* str, int length, unsigned char* buffer, int offset);
+    int CopyString(char* str, int length, uint8_t* buffer, int offset);
 
     UsbDevice* d;
     int busNum;
     int devNum;
     int speed;
-    char pathStrBuf[256];
-    char busIdStrBuf[32];
+    char pathStrBuf[USBIP_PATH_STR_LENGTH];
+    char busIdStrBuf[USBIP_BUSID_STR_LENGTH];
 };
 
 #endif // USBIP_DEVICE_H

@@ -39,7 +39,7 @@ UsbIpDevice::UsbIpDevice(UsbDevice* d, string path, string busId,
     this->speed = speed;
 }
 
-int UsbIpDevice::FillDeviceData(unsigned char* buffer, int offset, bool withInterfaces) {
+int UsbIpDevice::FillDeviceData(uint8_t* buffer, int offset, bool withInterfaces) {
     int pos = offset;
 
     pos += CopyString(this->pathStrBuf, sizeof(this->pathStrBuf), buffer, pos);
@@ -71,15 +71,17 @@ int UsbIpDevice::FillDeviceData(unsigned char* buffer, int offset, bool withInte
     return pos - offset;
 }
 
-int UsbIpDevice::CopyString(char* str, int length, unsigned char* buffer, int offset) {
-    memcpy(&buffer[offset], str, length);
+int UsbIpDevice::CopyString(char* str, int length, uint8_t* buffer, int offset) {
+    if (buffer != NULL) {
+	memcpy(&buffer[offset], str, length);
+    }
     return length;
 }
 
 int UsbIpDevice::TxRx(int endPoint,
-		      unsigned char* setupBuffer,
-		      unsigned char* dataBuffer,
-		      unsigned char* outBuffer,
+		      uint8_t* setupBuffer,
+		      uint8_t* dataBuffer,
+		      uint8_t* outBuffer,
 		      int outBufferLength) {
     return d->TxRx(endPoint, setupBuffer, dataBuffer, outBuffer, outBufferLength);
 }

@@ -53,7 +53,7 @@ namespace Verbose {
 	std::fflush(fd);
     }
 
-    void VECTOR(VerboseLogLevel_t level, const char* name, unsigned char* vector, int size) {
+    void VECTOR(VerboseLogLevel_t level, const char* name, uint8_t* vector, int size) {
 	FILE* fd = TYPE(level);
 	if (fd == NULL) return;
 
@@ -94,15 +94,15 @@ namespace Verbose {
 	va_end( arglist );
     }
 
-    void ERROR_VECTOR(const char* name, unsigned char* vector, int size) {
+    void ERROR_VECTOR(const char* name, uint8_t* vector, int size) {
 	VECTOR(LEVEL_ERROR, name, vector, size);
     }
 
-    void INFO_VECTOR(const char* name, unsigned char* vector, int size) {
+    void INFO_VECTOR(const char* name, uint8_t* vector, int size) {
 	VECTOR(LEVEL_INFO, name, vector, size);
     }
 
-    void DEBUG_VECTOR(const char* name, unsigned char* vector, int size) {
+    void DEBUG_VECTOR(const char* name, uint8_t* vector, int size) {
 	VECTOR(LEVEL_DEBUG, name, vector, size);
     }
 

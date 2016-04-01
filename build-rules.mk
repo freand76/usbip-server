@@ -8,8 +8,8 @@ CFLAGS=
 CFLAGS+=-ggdb
 
 # Developer flags (sanitize)
-#CFLAGS+=-fsanitize=address
-#LDFLAGS+=-lasan
+CFLAGS+=-fsanitize=address
+LDFLAGS+=-lasan
 
 CFLAGS+=-O2 -std=c++11 -Werror -Wextra -Wall -I.
 CFLAGS+=-I./src/server \

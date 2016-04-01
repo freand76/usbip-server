@@ -16,7 +16,7 @@
 #include "NetworkUtil.h"
 
 namespace NetworkUtil {
-    unsigned int GetUint(unsigned char* buffer, int offset, int byteWidth) {
+    unsigned int GetUint(uint8_t* buffer, int offset, int byteWidth) {
 	unsigned int res = 0;
 	for (int idx = 0; idx < byteWidth; idx++) {
 	    res = res << 8;
@@ -25,7 +25,7 @@ namespace NetworkUtil {
 	return res;
     };
 
-    int SetUint(unsigned int value, unsigned char* buffer, int offset, int byteWidth) {
+    int SetUint(unsigned int value, uint8_t* buffer, int offset, int byteWidth) {
 	if (buffer != NULL) {
 	    for (int idx = byteWidth-1; idx >= 0; idx--) {
 		buffer[offset + idx] = value >> ((byteWidth - idx - 1) * 8);
@@ -34,7 +34,7 @@ namespace NetworkUtil {
 	return byteWidth;
     };
 
-    int AddData(unsigned char* data, unsigned char* buffer, int offset, int len) {
+    int AddData(uint8_t* data, uint8_t* buffer, int offset, int len) {
 	if (buffer != NULL) {
 	    memcpy(&buffer[offset], data, len);
 	}

@@ -59,43 +59,43 @@ int UsbInterface::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
     return pos-offset;
 }
 
-int UsbInterface::InterfaceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
+int UsbInterface::InterfaceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
     uint8_t bmRequestType = setup[0];
     int bfDataDirection = bmRequestType & 0x80;
     if (bfDataDirection) {
 	/* OutRequest */
-	return OutRequest(setup, data, replyBuffer, bufLength);
+	return OutRequest(setup, data, replyBuffer, transferLength);
     } else {
 	/* InRequest */
-	return InRequest(setup, data, replyBuffer, bufLength);
+	return InRequest(setup, data, replyBuffer, transferLength);
     }
 
     return EP_STALL;
 }
 
-int UsbInterface::OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
+int UsbInterface::OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
     uint8_t bRequest = setup[1];
     DEBUG("UsbInterface: OutRequest %.2x", bRequest);
 
     if (bRequest == 0x06) {
-	return GetDescriptor(setup, data, replyBuffer, bufLength);
+	return GetDescriptor(setup, data, replyBuffer, transferLength);
     }
     return EP_STALL;
 }
 
-int UsbInterface::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
+int UsbInterface::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
     (void)setup;
     (void)data;
     (void)replyBuffer;
-    (void)bufLength;
+    (void)transferLength;
     ERROR("Unkown GetDescriptor UsbInterface");
     return EP_STALL;
 }
 
-int UsbInterface::InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
+int UsbInterface::InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
     (void)data;
     (void)replyBuffer;
-    (void)bufLength;
+    (void)transferLength;
 
     uint8_t bRequest = setup[1];
     if (bRequest == 0x0a) {
