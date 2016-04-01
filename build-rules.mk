@@ -16,7 +16,8 @@ CFLAGS+=-I./src/server \
 	-I./src/usb \
 	-I./src/device \
 	-I./src/util \
-	-I./src/log
+	-I./src/log \
+	-I./src/app
 
 LDFLAGS+=-lpthread
 

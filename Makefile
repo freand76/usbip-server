@@ -1,17 +1,8 @@
-PROG=TestApp
+PROG=HidMouse
 
-SRC_FILES = \
-	UsbIpServer.cc \
-	UsbIpDevice.cc \
-	UsbDevice.cc \
-	UsbConfiguration.cc \
-	UsbInterface.cc \
-	UsbEndpoint.cc \
-	UsbUtil.cc \
-	NetworkUtil.cc \
-	Verbose.cc \
-	HidMouse.cc \
-	TestApp.cc
+include common-src.mk
+
+SRC_FILES += HidMouse.cc
 
 include build-rules.mk
 
