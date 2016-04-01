@@ -1,12 +1,5 @@
-PROG=HidMouse
-
-include common-src.mk
-
-SRC_FILES += HidMouse.cc
-
-include build-rules.mk
-
-all: $(PROG)
+all:
+	make -f Makefile.hidmouse -j
 
 clean:
-	rm -rf $(OBJDIR)
+	make -f Makefile.hidmouse clean
