@@ -1,0 +1,12 @@
+PROG=BulkIO
+
+include common-src.mk
+
+SRC_FILES += BulkIO.cc
+
+include build-rules.mk
+
+all: $(PROG)
+
+clean:
+	rm -rf $(OBJDIR)
