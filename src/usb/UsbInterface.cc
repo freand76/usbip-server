@@ -109,7 +109,7 @@ int UsbInterface::InRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut
 
 UsbEndpoint* UsbInterface::GetEndpoint(uint8_t endpointAddress) {
     for (int idx = 0; idx < bNumEndpoints; idx++) {
-	if ((endpointArray[idx]->bEndpointAddress & 0x7f) == endpointAddress) {
+	if ((endpointArray[idx]->bEndpointAddress) == endpointAddress) {
 	    return endpointArray[idx];
 	}
     }

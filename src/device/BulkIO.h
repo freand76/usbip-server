@@ -33,7 +33,7 @@ public:
 
 class BulkOutputEndpoint : public UsbEndpoint {
 public:
-    BulkOutputEndpoint() : UsbEndpoint(0x02, 2, 64, 255) {};
+    BulkOutputEndpoint() : UsbEndpoint(0x01, 2, 64, 255) {};
     int Data(uint8_t* inData, uint8_t* outBuffer, int length);
 };
 

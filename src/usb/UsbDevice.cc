@@ -62,6 +62,7 @@ int UsbDevice::TxRx(uint8_t endpoint, uint8_t* usbSetup, uint8_t* dataIn, uint8_
 	return transferLength;
     }
 
+    DEBUG("Get Endpoint %.2x", endpoint);
     return configurationArray[0]->GetEndpoint(endpoint)->Data(dataIn, dataOut, transferLength);
 }
 

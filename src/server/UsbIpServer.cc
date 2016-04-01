@@ -366,11 +366,16 @@ uint8_t* UsbIpServer::UsbIpHandleURB(int clientSocketFd, uint8_t* cmdHeadBuffer,
     uint8_t usbSetup[8];
     memcpy(usbSetup, &cmdHeadBuffer[0x28], sizeof(usbSetup));
 
+    int ioEp = ep;
     uint8_t rxData[transferLength];
     /* Read incoming data if available */
     if (direction == 0) {
 	if (TcpRead(clientSocketFd, rxData, transferLength) != transferLength) {
 	    return NULL;
+	}
+    } else {
+	if (ioEp > 0) {
+	    ioEp = ioEp | 0x80;
 	}
     }
 
@@ -380,7 +385,7 @@ uint8_t* UsbIpServer::UsbIpHandleURB(int clientSocketFd, uint8_t* cmdHeadBuffer,
     unsigned int actualLength = 0;
     if (txBuffer != NULL) {
 	memset(txBuffer, 0, USBIP_CMD_HEAD_SIZE + USBIP_MAX_PACKET_SIZE);
-	int status = usbIpDevice.TxRx(ep, usbSetup, rxData, usbReply, transferLength);
+	int status = usbIpDevice.TxRx(ioEp, usbSetup, rxData, usbReply, transferLength);
 	if (status < 0) {
 	    switch(status) {
 	    case EP_STALL:
