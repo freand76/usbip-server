@@ -20,8 +20,17 @@ Playing around with kernel modules and Virtual USB devices can cause the kernel 
 ## Build
 - cd usbip-server
 - make
-- .x86/TestApp --help
-- .x86/TestApp -vv
+
+## Start
+
+#### HidMouse
+- .x86/HidMouse -vv
+
+#### BulkIO
+- .x86/BulkIO -vv
+
+###### Test Tool
+- sudo ./tools/test-bulkio.py
 
 ## Attach Virtual Device
 
@@ -41,6 +50,7 @@ Playing around with kernel modules and Virtual USB devices can cause the kernel 
 - Handles 1 (one) device over the usbip protocol
 - USB Stack handles a single interrupt endpoint (at least)
 - A HID Mouse Device is implemented
+- A BulkIO Device is implemented
 
 ## Todo
 - Handle several virtual USB devices in the UsbIpServer
