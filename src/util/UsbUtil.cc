@@ -21,7 +21,7 @@ namespace UsbUtil {
 	for (int idx = 0; idx < byteWidth; idx++) {
 	    unsigned int val = buffer[offset + idx];
 	    res = res >> 8;
-	    res = res | (val << (byteWidth-1));
+	    res = res | (val << (8*(byteWidth-1)));
 	}
 	return res;
     };
