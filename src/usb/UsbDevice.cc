@@ -41,57 +41,57 @@ UsbDevice::UsbDevice(uint16_t idVendor,
     this->configurationArray = configurationArray;
 }
 
-int UsbDevice::TxRx(uint8_t endpoint, uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
+int UsbDevice::TxRx(uint8_t endpoint, uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength) {
     if (endpoint == 0) {
 	/* Control */
-	uint8_t bmRequestType = setup[0];
+	uint8_t bmRequestType = usbSetup[0];
 	int bfRecipient = bmRequestType & 0x05;
 
 	switch(bfRecipient) {
 	case 0:
-	    return DeviceRequest(setup, data, replyBuffer, transferLength);
+	    return DeviceRequest(usbSetup, dataIn, dataOut, transferLength);
 	case 1:
-	    return InterfaceRequest(setup, data, replyBuffer, transferLength);
+	    return InterfaceRequest(usbSetup, dataIn, dataOut, transferLength);
 	default:
 	    DEBUG("Unknown bfRecipient %d", bfRecipient);
 	}
 	return EP_STALL;
     }
 
-    if (replyBuffer == NULL) {
+    if (dataOut == NULL) {
 	return transferLength;
     }
 
-    return configurationArray[0]->GetEndpoint(endpoint)->Data(data, replyBuffer, transferLength);
+    return configurationArray[0]->GetEndpoint(endpoint)->Data(dataIn, dataOut, transferLength);
 }
 
 void UsbDevice::Disconnect() {
     deviceConnected = false;
 }
 
-int UsbDevice::DeviceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
-    uint8_t bmRequestType = setup[0];
+int UsbDevice::DeviceRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength) {
+    uint8_t bmRequestType = usbSetup[0];
     int bfDataDirection = bmRequestType & 0x80;
     if (bfDataDirection) {
 	/* OutRequest */
-	return OutRequest(setup, data, replyBuffer, transferLength);
+	return OutRequest(usbSetup, dataIn, dataOut, transferLength);
     } else {
 	/* InRequest */
-	return InRequest(setup, data, replyBuffer, transferLength);
+	return InRequest(usbSetup, dataIn, dataOut, transferLength);
     }
 }
 
-int UsbDevice::OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
-    uint8_t bRequest = setup[1];
+int UsbDevice::OutRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength) {
+    uint8_t bRequest = usbSetup[1];
     DEBUG("UsbDevice: OutRequest %.2x", bRequest);
 
     int packetSize = 0;
 
     if (bRequest == 0x00) {
-	SetUint(0x0001, replyBuffer, 0, 2);
+	SetUint(0x0001, dataOut, 0, 2);
 	packetSize = 2;
     } else if (bRequest == 0x06) {
-	packetSize =  GetDescriptor(setup, data, replyBuffer, transferLength);
+	packetSize =  GetDescriptor(usbSetup, dataIn, dataOut, transferLength);
     } else {
 	ERROR("Unknown bRequest: %.2x", bRequest);
     }
@@ -99,32 +99,32 @@ int UsbDevice::OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, i
     return packetSize;
 }
 
-int UsbDevice::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
-    (void)data;
-    uint8_t bDescriptorType = setup[3];
-    uint8_t bDescriptorIndex = setup[2];
+int UsbDevice::GetDescriptor(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength) {
+    (void)dataIn;
+    uint8_t bDescriptorType = usbSetup[3];
+    uint8_t bDescriptorIndex = usbSetup[2];
 
     switch(bDescriptorType) {
     case 0x01:
-	if (replyBuffer != NULL) {
-	    replyBuffer[0] = 18;
-	    replyBuffer[1] = 1;
-	    SetUint(USB_VERSION, replyBuffer, 2, 2);
-	    replyBuffer[4] = bDeviceClass;
-	    replyBuffer[5] = bDeviceSubClass;
-	    replyBuffer[6] = bDeviceProtocol;
+	if (dataOut != NULL) {
+	    dataOut[0] = 18;
+	    dataOut[1] = 1;
+	    SetUint(USB_VERSION, dataOut, 2, 2);
+	    dataOut[4] = bDeviceClass;
+	    dataOut[5] = bDeviceSubClass;
+	    dataOut[6] = bDeviceProtocol;
 	    if (transferLength < 64) {
-		replyBuffer[7] = transferLength;
+		dataOut[7] = transferLength;
 	    } else {
-		replyBuffer[7] = 64;
+		dataOut[7] = 64;
 	    }
-	    SetUint(idVendor, replyBuffer, 8, 2);
-	    SetUint(idProduct, replyBuffer, 10, 2);
-	    SetUint(bcdDevice, replyBuffer, 12, 2);
-	    replyBuffer[14] = 0;
-	    replyBuffer[15] = 0;
-	    replyBuffer[16] = 0;
-	    replyBuffer[17] = bNumConfigurations;
+	    SetUint(idVendor, dataOut, 8, 2);
+	    SetUint(idProduct, dataOut, 10, 2);
+	    SetUint(bcdDevice, dataOut, 12, 2);
+	    dataOut[14] = 0;
+	    dataOut[15] = 0;
+	    dataOut[16] = 0;
+	    dataOut[17] = bNumConfigurations;
 	}
 	return 18;
     case 0x02:
@@ -134,20 +134,20 @@ int UsbDevice::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer
 	// [ 5787.497786] usb 8-1: config 1 interface 0 altsetting 0 bulk endpoint 0x81 has invalid maxpacket 64
 	// [ 5787.497792] usb 8-1: config 1 interface 1 altsetting 0 bulk endpoint 0x82 has invalid maxpacket 64
 	if (bDescriptorIndex < bNumConfigurations) {
-	    return configurationArray[bDescriptorIndex]->GenerateConfigurationDescriptor(replyBuffer, 0);
+	    return configurationArray[bDescriptorIndex]->GenerateConfigurationDescriptor(dataOut, 0);
 	}
 	return EP_STALL;
     case 0x06:
-	if (replyBuffer != NULL) {
-	    replyBuffer[0] = 10;
-	    replyBuffer[1] = 6;
-	    SetUint(USB_VERSION, replyBuffer, 2, 2);
-	    replyBuffer[4] = bDeviceClass;
-	    replyBuffer[5] = bDeviceSubClass;
-	    replyBuffer[6] = bDeviceProtocol;
-	    replyBuffer[7] = 64;
-	    replyBuffer[8] = 0;
-	    replyBuffer[9] = 0;
+	if (dataOut != NULL) {
+	    dataOut[0] = 10;
+	    dataOut[1] = 6;
+	    SetUint(USB_VERSION, dataOut, 2, 2);
+	    dataOut[4] = bDeviceClass;
+	    dataOut[5] = bDeviceSubClass;
+	    dataOut[6] = bDeviceProtocol;
+	    dataOut[7] = 64;
+	    dataOut[8] = 0;
+	    dataOut[9] = 0;
 	}
 	return 10;
     default:
@@ -157,18 +157,18 @@ int UsbDevice::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer
     return EP_STALL;
 }
 
-int UsbDevice::InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
-    (void)data;
-    (void)replyBuffer;
+int UsbDevice::InRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength) {
+    (void)dataIn;
+    (void)dataOut;
     (void)transferLength;
 
-    uint8_t bRequest = setup[1];
+    uint8_t bRequest = usbSetup[1];
     DEBUG("UsbDevice: InRequest %.2x", bRequest);
     switch(bRequest) {
     case 0x09:
     {
 	/* Set Configuration */
-	int configrationValue = GetUint(setup, 2, 2);
+	int configrationValue = GetUint(usbSetup, 2, 2);
 	DEBUG("UsbDevice: Set Configuration: %d", configrationValue);
 	DEBUG("Device Connected");
 	deviceConnected = true;
@@ -179,11 +179,11 @@ int UsbDevice::InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, in
     return EP_STALL;
 }
 
-int UsbDevice::InterfaceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength) {
-    uint8_t bInterfaceIndex = setup[2];
+int UsbDevice::InterfaceRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength) {
+    uint8_t bInterfaceIndex = usbSetup[2];
     DEBUG("UsbDevice: InterfaceRequest %.2x", bInterfaceIndex);
     if (bInterfaceIndex < configurationArray[0]->bNumInterfaces) {
-	return configurationArray[0]->interfaceArray[bInterfaceIndex]->InterfaceRequest(setup, data, replyBuffer, transferLength);
+	return configurationArray[0]->interfaceArray[bInterfaceIndex]->InterfaceRequest(usbSetup, dataIn, dataOut, transferLength);
     }
     return EP_STALL;
 }

@@ -24,7 +24,7 @@ public:
                 uint16_t wMaxPacketSize,
                 uint8_t bInterval);
     int GenerateConfigurationDescriptor(uint8_t* buffer, int offset);
-    virtual int Data(uint8_t* inData, uint8_t* outBuffer, int length) = 0;
+    virtual int Data(uint8_t* dataIn, uint8_t* dataOut, int transferLength) = 0;
 
     uint8_t bEndpointAddress;
     uint8_t bmAttributes;

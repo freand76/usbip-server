@@ -176,14 +176,11 @@ unsigned int UsbIpServer::TcpRead(int clientSocketFd, uint8_t* buffer, unsigned 
     DEBUG("TCP Read %d", readSize);
     do {
 	int rBytes = read(clientSocketFd, &buffer[readBytes], readSize - readBytes);
-	DEBUG("   Read %d", rBytes);
 	if (rBytes == 0) {
 	    break;
 	}
 	readBytes += rBytes;
     } while(readBytes < readSize);
-
-    DEBUG_VECTOR("TCP", buffer, readBytes);
 
     return readBytes;
 }
@@ -243,10 +240,10 @@ void UsbIpServer::ConnectionWorker(int clientSocketFd) {
 	    break;
 	}
 
-	DEBUG("TCP TxSize %d", txSize);
-	DEBUG_VECTOR("TCP", txBuffer, txSize);
+
 
 	/* Transmit data over TCP/IP socket */
+	DEBUG("TCP Write %d", txSize);
 	int wSize = write(clientSocketFd, txBuffer, txSize);
 	delete[] txBuffer;
 
@@ -333,7 +330,7 @@ uint8_t* UsbIpServer::UsbIpUnlinkURB(uint8_t* cmdHeadBuffer, int& txSize) {
     uint32_t sequenceNumber =   GetUint(cmdHeadBuffer, 0x04, 4);  /* 0x04 seqnum  */
     uint32_t devId =            GetUint(cmdHeadBuffer, 0x08, 4);  /* 0x08 devid */
     uint32_t unlinkSeqNum =     GetUint(cmdHeadBuffer, 0x14, 4);  /* 0x14 unlink seqnum */
-    DEBUG("Unlink URB %.4x", unlinkSeqNum);
+    DEBUG("Unlink URB %d:%d", sequenceNumber, unlinkSeqNum);
 
     uint8_t* txBuffer = new uint8_t[USBIP_CMD_HEAD_SIZE];
     if (txBuffer != NULL) {

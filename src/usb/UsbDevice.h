@@ -31,13 +31,14 @@ public:
               uint8_t bNumConfigurations,
               UsbConfiguration** configurationArray);
 
-    int TxRx(uint8_t endpoint, uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength);
-    int DeviceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength);
-    int InterfaceRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength);
-    int OutRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength);
-    int GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength);
+    int TxRx(uint8_t endpoint, uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
+    int DeviceRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
+    int InterfaceRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
 
-    int InRequest(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int transferLength);
+    int OutRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
+    int InRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
+    int GetDescriptor(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
+
     void Disconnect();
     bool IsConnected() { return deviceConnected; };
 
