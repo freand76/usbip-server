@@ -24,20 +24,20 @@ using namespace UsbUtil;
 #include "Verbose.h"
 using namespace Verbose;
 
-#define HID_MOUSE_REPORT_IDX 34
+#define MOUSE_REPORT_ID 100
 
 int HidMouseInterface::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
     int pos = offset;
     pos += UsbInterface::GenerateConfigurationDescriptor(buffer, pos);
     int rSize = GenerateHIDReportDescriptor(NULL, 0);
 
-    pos += SetUint(9,                    buffer, pos, 1);
-    pos += SetUint(0x21,                 buffer, pos, 1);
-    pos += SetUint(0x110,                buffer, pos, 2);
-    pos += SetUint(0,                    buffer, pos, 1);
-    pos += SetUint(1,                    buffer, pos, 1);
-    pos += SetUint(HID_MOUSE_REPORT_IDX, buffer, pos, 1);
-    pos += SetUint(rSize,                buffer, pos, 2);
+    pos += SetUint(9,      buffer, pos, 1);
+    pos += SetUint(0x21,   buffer, pos, 1);
+    pos += SetUint(0x110,  buffer, pos, 2);
+    pos += SetUint(0,      buffer, pos, 1);
+    pos += SetUint(1,      buffer, pos, 1);
+    pos += SetUint(0x22,   buffer, pos, 1);
+    pos += SetUint(rSize,  buffer, pos, 2);
 
     return pos - offset;
 }
@@ -48,6 +48,7 @@ static uint8_t reportDescriptorHID[] = {
     0xa1, 0x01,                    // COLLECTION (Application)
     0x09, 0x01,                    //   USAGE (Pointer)
     0xa1, 0x00,                    //   COLLECTION (Physical)
+    0x85, MOUSE_REPORT_ID,         //     REPORT_ID
     0x05, 0x09,                    //     USAGE_PAGE (Button)
     0x19, 0x01,                    //     USAGE_MINIMUM (Button 1)
     0x29, 0x03,                    //     USAGE_MAXIMUM (Button 3)
@@ -82,7 +83,7 @@ int HidMouseInterface::GenerateHIDReportDescriptor(uint8_t* buffer, int offset) 
 int HidMouseInterface::GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength) {
     uint8_t bDescriptorType = setup[3];
 
-    if (bDescriptorType == HID_MOUSE_REPORT_IDX) {
+    if (bDescriptorType == 0x22) {
 	return GenerateHIDReportDescriptor(replyBuffer, 0);
     }
 
@@ -93,16 +94,17 @@ int HidMouseEndpoint::Data(uint8_t* inData, uint8_t* outBuffer, int length) {
     (void)inData;
     (void)length;
 
-    outBuffer[0] = event.but;
-    outBuffer[1] = event.x;
-    outBuffer[2] = event.y;
+    outBuffer[0] = MOUSE_REPORT_ID;
+    outBuffer[1] = event.but;
+    outBuffer[2] = event.x;
+    outBuffer[3] = event.y;
 
     event.but = 0;
     event.x = 0;
     event.y = 0;
     event.free = true;
 
-    return 3;
+    return 4;
 }
 
 bool HidMouse::Move(int but, int x, int y) {
