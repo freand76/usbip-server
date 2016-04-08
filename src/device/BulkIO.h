@@ -53,9 +53,9 @@ private:
     BulkInputEndpoint  inputEndpoint;
     BulkOutputEndpoint outputEndpoint;
     UsbEndpoint* endpointList[2] = { &inputEndpoint, &outputEndpoint };
-    UsbInterface interface = { 0, 0, 0xff, 0, 0, 0, 2, endpointList };
+    UsbInterface interface = { 0, 0xff, 0, 0, 2, endpointList };
     UsbInterface* interfaceList[1] = { &interface };
-    UsbConfiguration config = { 1, 0, 0xc0, 100, 1, interfaceList };
+    UsbConfiguration config = { 11, 1, interfaceList };
     UsbConfiguration* configurationList[1] = { &config };
     UsbString usbString = { 3, stringArray };
 };
