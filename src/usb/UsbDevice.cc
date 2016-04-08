@@ -108,7 +108,7 @@ int UsbDevice::OutRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, 
     return packetSize;
 }
 
-int UsbDevice::GetDesviceDescriptor(uint8_t* buffer, int transferLength) {
+int UsbDevice::GetDeviceDescriptor(uint8_t* buffer, int transferLength) {
     int pos = 0;
     pos += SetUint(18,                  buffer, pos, 1);
     pos += SetUint(1,                   buffer, pos, 1);
@@ -149,7 +149,6 @@ int UsbDevice::GetDescriptor(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOu
     (void)dataIn;
     uint8_t bDescriptorType = usbSetup[3];
     uint8_t bDescriptorIndex = usbSetup[2];
-    int pos = 0;
 
     switch(bDescriptorType) {
     case 0x01:

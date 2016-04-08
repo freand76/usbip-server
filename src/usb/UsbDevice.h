@@ -45,7 +45,7 @@ public:
     int InRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
 
     int GetDescriptor(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
-    int GetDesviceDescriptor(uint8_t* buffer, int transferLength);
+    int GetDeviceDescriptor(uint8_t* buffer, int transferLength);
     int GetDeviceQualifier(uint8_t* buffer);
 
     void Disconnect();

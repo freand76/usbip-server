@@ -24,6 +24,14 @@ typedef struct  {
     int y;
 } MouseEvent_t;
 
+const char* stringArray[5] = {
+    "Mouse Manufacturer",
+    "Automatic Mouse Mover",
+    "Mouse-1337",
+    "Mouse Configuration",
+    "Mouse Interface",
+};
+
 
 class HidMouseEndpoint : public UsbEndpoint {
 public:
@@ -36,8 +44,9 @@ class HidMouseInterface : public UsbInterface {
 public:
     HidMouseInterface(uint8_t bInterfaceNumber,
                       uint8_t bNumEndpoints,
-                      UsbEndpoint** endpointArray) :
-    UsbInterface(bInterfaceNumber, 3, 1, 2, bNumEndpoints, endpointArray) {
+                      UsbEndpoint** endpointArray,
+                      uint8_t iInterface) :
+    UsbInterface(bInterfaceNumber, 3, 1, 2, bNumEndpoints, endpointArray, iInterface) {
     };
     int GenerateConfigurationDescriptor(uint8_t* buffer, int offset);
     int GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength);
@@ -51,15 +60,16 @@ public:
     HidMouse(uint16_t vid,
              uint16_t pid,
              uint16_t bcdVer) :
-    UsbDevice(vid, pid, bcdVer, 0, 0, 0, 1, configurationList) {
+    UsbDevice(vid, pid, bcdVer, 0, 0, 0, 1, configurationList, &usbString, 1, 2, 3) {
     };
 
     bool Move(int but, int x, int y);
 private:
     HidMouseEndpoint endpoint;
     UsbEndpoint* endpointList[1] = { &endpoint };
-    HidMouseInterface interface = { 0, 1, endpointList };
+    HidMouseInterface interface = { 0, 1, endpointList, 5 };
     UsbInterface* interfaceList[1] = { &interface };
-    UsbConfiguration config = { 0x77, 1, interfaceList };
+    UsbConfiguration config = { 0x77, 1, interfaceList, 4 };
     UsbConfiguration* configurationList[1] = { &config };
+    UsbString usbString = { 5, stringArray };
 };
