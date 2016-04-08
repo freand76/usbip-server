@@ -24,6 +24,7 @@ public:
         this->bNumStrings = bNumStrings;
         this->stringArray = stringArray;
     }
+    int GetStringDescriptor(uint8_t bDescriptorIndex, uint8_t* buffer, int offset);
     uint8_t bNumStrings;
     const char** stringArray;
 };

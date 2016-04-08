@@ -13,3 +13,16 @@
 ********************************************************/
 
 #include "UsbString.h"
+#include "UsbDevice.h"
+#include "UsbUtil.h"
+
+using namespace UsbUtil;
+
+int UsbString::GetStringDescriptor(uint8_t bDescriptorIndex, uint8_t* buffer, int offset) {
+    int pos = offset;
+    if (bDescriptorIndex == 0) {
+	pos += SetUint(3, buffer, pos, 1);
+    }
+
+    return EP_STALL;
+}

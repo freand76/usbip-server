@@ -130,9 +130,9 @@ int UsbDevice::GetDescriptor(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOu
 	pos += SetUint(idVendor,            dataOut, pos, 2);
 	pos += SetUint(idProduct,           dataOut, pos, 2);
 	pos += SetUint(bcdDevice,           dataOut, pos, 2);
-	pos += SetUint(0,                   dataOut, pos, 1);
-	pos += SetUint(0,                   dataOut, pos, 1);
-	pos += SetUint(0,                   dataOut, pos, 1);
+	pos += SetUint(iManufacturer,       dataOut, pos, 1);
+	pos += SetUint(iProduct,            dataOut, pos, 1);
+	pos += SetUint(iSerialNumber,       dataOut, pos, 1);
 	pos += SetUint(bNumConfigurations,  dataOut, pos, 1);
 	return pos;
     case 0x02:
@@ -143,6 +143,12 @@ int UsbDevice::GetDescriptor(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOu
 	// [ 5787.497792] usb 8-1: config 1 interface 1 altsetting 0 bulk endpoint 0x82 has invalid maxpacket 64
 	if (bDescriptorIndex < bNumConfigurations) {
 	    return configurationArray[bDescriptorIndex]->GenerateConfigurationDescriptor(dataOut, 0);
+	}
+	return EP_STALL;
+    case 0x03:
+	/* String Descriptor */
+	if (usbString != NULL) {
+	    return usbString->GetStringDescriptor(bDescriptorIndex, dataOut, 0);
 	}
 	return EP_STALL;
     case 0x06:
