@@ -29,7 +29,8 @@ public:
                  uint8_t iInterface = 0,
                  uint8_t bAlternateSetting = 0);
 
-    virtual int GenerateConfigurationDescriptor(uint8_t* buffer, int offset);
+    int GenerateConfigurationDescriptor(uint8_t* buffer, int offset);
+    virtual int GenerateInterfaceDescriptor(uint8_t* buffer, int offset);
     virtual int InterfaceRequest(uint8_t* usbSetup, uint8_t* data, uint8_t* replyBuffer, int transferLength);
     virtual int OutRequest(uint8_t* usbSetup, uint8_t* data, uint8_t* replyBuffer, int transferLength);
     virtual int GetDescriptor(uint8_t* usbSetup, uint8_t* data, uint8_t* replyBuffer, int transferLength);

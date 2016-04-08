@@ -48,7 +48,7 @@ public:
                       uint8_t iInterface) :
     UsbInterface(bInterfaceNumber, 3, 1, 2, bNumEndpoints, endpointArray, iInterface) {
     };
-    int GenerateConfigurationDescriptor(uint8_t* buffer, int offset);
+    int GenerateInterfaceDescriptor(uint8_t* buffer, int offset);
     int GetDescriptor(uint8_t* setup, uint8_t* data, uint8_t* replyBuffer, int bufLength);
 
 private:

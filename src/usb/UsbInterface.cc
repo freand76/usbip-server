@@ -40,7 +40,7 @@ UsbInterface::UsbInterface(uint8_t bInterfaceNumber,
     this->endpointArray = endpointArray;
 }
 
-int UsbInterface::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
+int UsbInterface::GenerateInterfaceDescriptor(uint8_t* buffer, int offset) {
     int pos = offset;
 
     pos += SetUint(9,                  buffer, pos, 1);
@@ -52,6 +52,14 @@ int UsbInterface::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
     pos += SetUint(bInterfaceSubClass, buffer, pos, 1);
     pos += SetUint(bInterfaceProtocol, buffer, pos, 1);
     pos += SetUint(iInterface,         buffer, pos, 1);
+
+    return pos - offset;
+}
+
+
+int UsbInterface::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
+    int pos = offset;
+    pos += GenerateInterfaceDescriptor(buffer, pos);
 
     for (int idx = 0; idx < bNumEndpoints; idx++) {
 	pos += endpointArray[idx]->GenerateConfigurationDescriptor(buffer, pos);

@@ -26,9 +26,9 @@ using namespace Verbose;
 
 #define MOUSE_REPORT_ID 100
 
-int HidMouseInterface::GenerateConfigurationDescriptor(uint8_t* buffer, int offset) {
+int HidMouseInterface::GenerateInterfaceDescriptor(uint8_t* buffer, int offset) {
     int pos = offset;
-    pos += UsbInterface::GenerateConfigurationDescriptor(buffer, pos);
+    pos += UsbInterface::GenerateInterfaceDescriptor(buffer, pos);
     int rSize = GenerateHIDReportDescriptor(NULL, 0);
 
     pos += SetUint(9,      buffer, pos, 1);
