@@ -16,7 +16,9 @@
 #define USB_DEVICE_H
 
 #include <stdint.h>
+#include <string.h>
 #include "UsbConfiguration.h"
+#include "UsbString.h"
 
 #define EP_STALL (-32)
 
@@ -29,7 +31,11 @@ public:
               uint8_t bDeviceSubClass,
               uint8_t bDeviceProtocol,
               uint8_t bNumConfigurations,
-              UsbConfiguration** configurationArray);
+              UsbConfiguration** configurationArray,
+              UsbString* usbString = NULL,
+              uint8_t iManufacturer = 0,
+              uint8_t iProduct = 0,
+              uint8_t iSerialNumber = 0);
 
     int TxRx(uint8_t endpoint, uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
     int DeviceRequest(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength);
@@ -52,6 +58,10 @@ public:
     uint8_t bConfigurationValue;
     uint8_t bNumConfigurations;
     UsbConfiguration** configurationArray;
+    UsbString* usbString;
+    uint8_t iManufacturer;
+    uint8_t iProduct;
+    uint8_t iSerialNumber;
 };
 
 #endif // USB_DEVICE_H

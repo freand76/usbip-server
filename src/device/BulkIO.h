@@ -24,6 +24,11 @@ typedef struct  {
     int y;
 } MouseEvent_t;
 
+const char* stringArray[3] = {
+    "Bulk Manufacturer",
+    "Bulk Device Name",
+    "ABC123",
+};
 
 class BulkInputEndpoint : public UsbEndpoint {
 public:
@@ -42,7 +47,7 @@ public:
     BulkIO(uint16_t vid,
              uint16_t pid,
              uint16_t bcdVer) :
-    UsbDevice(vid, pid, bcdVer, 0, 0, 0, 1, configurationList) {
+    UsbDevice(vid, pid, bcdVer, 0, 0, 0, 1, configurationList, &usbString, 1, 2, 3) {
     };
 private:
     BulkInputEndpoint  inputEndpoint;
@@ -52,4 +57,5 @@ private:
     UsbInterface* interfaceList[1] = { &interface };
     UsbConfiguration config = { 1, 0, 0xc0, 100, 1, interfaceList };
     UsbConfiguration* configurationList[1] = { &config };
+    UsbString usbString = { 3, stringArray };
 };

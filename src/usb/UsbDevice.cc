@@ -29,7 +29,11 @@ UsbDevice::UsbDevice(uint16_t idVendor,
 		     uint8_t bDeviceSubClass,
 		     uint8_t bDeviceProtocol,
 		     uint8_t bNumConfigurations,
-		     UsbConfiguration** configurationArray) {
+		     UsbConfiguration** configurationArray,
+		     UsbString* usbString,
+		     uint8_t iManufacturer,
+		     uint8_t iProduct,
+		     uint8_t iSerialNumber) {
     this->deviceConnected = false;
     this->idVendor = idVendor;
     this->idProduct = idProduct;
@@ -39,6 +43,10 @@ UsbDevice::UsbDevice(uint16_t idVendor,
     this->bDeviceProtocol = bDeviceProtocol;
     this->bNumConfigurations = bNumConfigurations;
     this->configurationArray = configurationArray;
+    this->usbString = usbString;
+    this->iManufacturer = iManufacturer;
+    this->iProduct = iProduct;
+    this->iSerialNumber = iSerialNumber;
 }
 
 int UsbDevice::TxRx(uint8_t endpoint, uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOut, int transferLength) {
@@ -104,30 +112,29 @@ int UsbDevice::GetDescriptor(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOu
     (void)dataIn;
     uint8_t bDescriptorType = usbSetup[3];
     uint8_t bDescriptorIndex = usbSetup[2];
+    int pos = 0;
 
     switch(bDescriptorType) {
     case 0x01:
-	if (dataOut != NULL) {
-	    dataOut[0] = 18;
-	    dataOut[1] = 1;
-	    SetUint(USB_VERSION, dataOut, 2, 2);
-	    dataOut[4] = bDeviceClass;
-	    dataOut[5] = bDeviceSubClass;
-	    dataOut[6] = bDeviceProtocol;
-	    if (transferLength < 64) {
-		dataOut[7] = transferLength;
-	    } else {
-		dataOut[7] = 64;
-	    }
-	    SetUint(idVendor, dataOut, 8, 2);
-	    SetUint(idProduct, dataOut, 10, 2);
-	    SetUint(bcdDevice, dataOut, 12, 2);
-	    dataOut[14] = 0;
-	    dataOut[15] = 0;
-	    dataOut[16] = 0;
-	    dataOut[17] = bNumConfigurations;
+	pos += SetUint(18,                  dataOut, pos, 1);
+	pos += SetUint(1,                   dataOut, pos, 1);
+	pos += SetUint(USB_VERSION,         dataOut, pos, 2);
+	pos += SetUint(bDeviceClass,        dataOut, pos, 1);
+	pos += SetUint(bDeviceSubClass,     dataOut, pos, 1);
+	pos += SetUint(bDeviceProtocol,     dataOut, pos, 1);
+	if (transferLength < 64) {
+	    pos += SetUint(transferLength,  dataOut, pos, 1);
+	} else {
+	    pos += SetUint(64,              dataOut, pos, 1);
 	}
-	return 18;
+	pos += SetUint(idVendor,            dataOut, pos, 2);
+	pos += SetUint(idProduct,           dataOut, pos, 2);
+	pos += SetUint(bcdDevice,           dataOut, pos, 2);
+	pos += SetUint(0,                   dataOut, pos, 1);
+	pos += SetUint(0,                   dataOut, pos, 1);
+	pos += SetUint(0,                   dataOut, pos, 1);
+	pos += SetUint(bNumConfigurations,  dataOut, pos, 1);
+	return pos;
     case 0x02:
 	/* ConfigurationDescriptor */
 	// FIXME Handle EP size better!!!
@@ -139,18 +146,16 @@ int UsbDevice::GetDescriptor(uint8_t* usbSetup, uint8_t* dataIn, uint8_t* dataOu
 	}
 	return EP_STALL;
     case 0x06:
-	if (dataOut != NULL) {
-	    dataOut[0] = 10;
-	    dataOut[1] = 6;
-	    SetUint(USB_VERSION, dataOut, 2, 2);
-	    dataOut[4] = bDeviceClass;
-	    dataOut[5] = bDeviceSubClass;
-	    dataOut[6] = bDeviceProtocol;
-	    dataOut[7] = 64;
-	    dataOut[8] = 0;
-	    dataOut[9] = 0;
-	}
-	return 10;
+	pos += SetUint(10,                  dataOut, pos, 1);
+	pos += SetUint(6,                   dataOut, pos, 1);
+	pos += SetUint(USB_VERSION,         dataOut, pos, 2);
+	pos += SetUint(bDeviceClass,        dataOut, pos, 1);
+	pos += SetUint(bDeviceSubClass,     dataOut, pos, 1);
+	pos += SetUint(bDeviceProtocol,     dataOut, pos, 1);
+	pos += SetUint(64,                  dataOut, pos, 1);
+	pos += SetUint(0,                   dataOut, pos, 1);
+	pos += SetUint(0,                   dataOut, pos, 1);
+	return pos;
     default:
 	ERROR("Unknown bDescriptorType:bDescriptorIndexbRequest %.2x:%.2x", bDescriptorType, bDescriptorIndex);
 	break;
