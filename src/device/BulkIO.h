@@ -17,13 +17,6 @@
 #include "UsbInterface.h"
 #include "UsbEndpoint.h"
 
-typedef struct  {
-    bool free;
-    int but;
-    int x;
-    int y;
-} MouseEvent_t;
-
 const char* stringArray[3] = {
     "Bulk Manufacturer",
     "Bulk Device Name",

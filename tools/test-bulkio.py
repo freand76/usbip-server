@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import usb.core
 import usb.util
@@ -37,12 +37,12 @@ epOut = usb.util.find_descriptor(
 assert epIn is not None
 assert epOut is not None
 
-# write the data
+# write data to USB device
+for idx in range(0, 5):
+    str = "Hello World (%d)"%idx
+    epOut.write(str)
+
+# read data from USB device
 a = epIn.read(64)
-print a
+print("Received Data:", a.tostring().decode('utf-8'))
 
-str = ""
-for idx in range(0, 100):
-    str = str + "%d: Hello World\n"%idx
-
-epOut.write(str)
