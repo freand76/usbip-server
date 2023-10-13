@@ -3,9 +3,9 @@
 usbip is a part of the linux kernel (kernel version >= 3.17) and is used to export USB devices over TCP network from one computer (server) to another (client)
 The usbip protocol can also be used to create a playground for USB stack and/or USB device development.
 
-The goal for this project is to implement a usbip-server that can handle USB devices in a VSP (Virtual System Prototype) enviromnent.
+The goal for this project is to implement a usbip-server that can handle USB devices in a VSP (Virtual System Prototype) environment.
 
-## Requrements
+## Requirements
 - linux kernel >= 3.17
 - package linux-tools-generic [apt-get install linux-tools-generic]
 
