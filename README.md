@@ -30,7 +30,7 @@ Playing around with kernel modules and Virtual USB devices can cause the kernel 
 - .x86/BulkIO -vv
 
 ###### Test Tool
-- sudo ./tools/test-bulkio.py
+- sudo ./tools/test_bulkio.py
 
 ## Attach Virtual Device
 

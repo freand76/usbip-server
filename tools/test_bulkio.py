@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+""" Tools to send data to and receive data fram an USB bulk device """
+
 import usb.core
 import usb.util
 
@@ -39,10 +41,9 @@ assert epOut is not None
 
 # write data to USB device
 for idx in range(0, 5):
-    str = "Hello World (%d)"%idx
-    epOut.write(str)
+    test_str = f"Hello World {idx}"
+    epOut.write(test_str)
 
 # read data from USB device
-a = epIn.read(64)
-print("Received Data:", a.tostring().decode('utf-8'))
-
+response = bytearray(epIn.read(64))
+print(f"Received Data:'{response.decode('utf-8')}'")
