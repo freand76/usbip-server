@@ -9,31 +9,31 @@
  remains intact.
 
  code repository located at:
-	http://github.com/freand76/usbip-server
+        http://github.com/freand76/usbip-server
 ********************************************************/
 
 #include <stddef.h>
 #include "UsbUtil.h"
 
 namespace UsbUtil {
-    unsigned int GetUint(uint8_t* buffer, int offset, int byteWidth) {
-	unsigned int res = 0;
-	for (int idx = 0; idx < byteWidth; idx++) {
-	    unsigned int val = buffer[offset + idx];
-	    res = res >> 8;
-	    res = res | (val << (8*(byteWidth-1)));
-	}
-	return res;
+    unsigned int GetUint(uint8_t *buffer, int offset, int byteWidth) {
+        unsigned int res = 0;
+        for (int idx = 0; idx < byteWidth; idx++) {
+            unsigned int val = buffer[offset + idx];
+            res = res >> 8;
+            res = res | (val << (8 * (byteWidth - 1)));
+        }
+        return res;
     };
 
-    int SetUint(unsigned int value, uint8_t* buffer, int offset, int byteWidth) {
-	if (buffer != NULL) {
-	    int val = value;
-	    for (int idx = 0; idx < byteWidth; idx++) {
-		buffer[offset + idx] = val & 0xff;
-		val = val >> 8;
-	    }
-	}
-	return byteWidth;
+    int SetUint(unsigned int value, uint8_t *buffer, int offset, int byteWidth) {
+        if (buffer != NULL) {
+            int val = value;
+            for (int idx = 0; idx < byteWidth; idx++) {
+                buffer[offset + idx] = val & 0xff;
+                val = val >> 8;
+            }
+        }
+        return byteWidth;
     }
-}
+} // namespace UsbUtil

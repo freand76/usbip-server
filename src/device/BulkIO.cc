@@ -22,27 +22,25 @@
 using namespace UsbUtil;
 using namespace Verbose;
 
-
-int BulkInputEndpoint::Data(uint8_t* dataIn, uint8_t* dataOut, int length) {
+int BulkInputEndpoint::Data(uint8_t *dataIn, uint8_t *dataOut, int length) {
     (void)dataIn;
     static int outputIdx = 0;
-    sprintf((char*)dataOut, "OutputData (%d)", outputIdx++);
+    sprintf((char *)dataOut, "OutputData (%d)", outputIdx++);
     printf("USB Bulk %d bytes requested from device\n", length);
-    printf(" - Sending data [%s]\n", (char*)dataOut);
-    return strlen((char*)dataOut);
+    printf(" - Sending data [%s]\n", (char *)dataOut);
+    return strlen((char *)dataOut);
 }
 
-int BulkOutputEndpoint::Data(uint8_t* dataIn, uint8_t* dataOut, int length) {
+int BulkOutputEndpoint::Data(uint8_t *dataIn, uint8_t *dataOut, int length) {
     (void)dataOut;
     printf("%d:%s\n", length, dataIn);
     printf("USB Bulk device received %d bytes\n", length);
     printf(" - Hex Bytes: ");
-    for (int idx = 0; idx < length ; idx++)
-    {
+    for (int idx = 0; idx < length; idx++) {
         printf("0x%.2x, ", dataIn[idx]);
     }
     printf("\n");
-    printf(" - String: %s\n", (char*)dataIn);
+    printf(" - String: %s\n", (char *)dataIn);
     return 0;
 }
 
@@ -67,7 +65,7 @@ void intHandler(int) {
     }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     AppBase app;
     if (!app.HandleArguments(argc, argv)) {
         exit(0);
@@ -86,8 +84,8 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    while(keepRunning > 0) {
-        usleep(500*1000);
+    while (keepRunning > 0) {
+        usleep(500 * 1000);
         if (bulkIO.IsConnected()) {
             INFO("- Connected");
         }

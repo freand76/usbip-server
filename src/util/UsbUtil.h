@@ -18,8 +18,8 @@
 #include <stdint.h>
 
 namespace UsbUtil {
-    unsigned int GetUint(uint8_t* buffer, int offset, int byteWidth);
-    int SetUint(unsigned int value, uint8_t* buffer, int offset, int byteWidth);
-};
+    unsigned int GetUint(uint8_t *buffer, int offset, int byteWidth);
+    int SetUint(unsigned int value, uint8_t *buffer, int offset, int byteWidth);
+}; // namespace UsbUtil
 
 #endif // USB_UTIL_H

@@ -3,6 +3,7 @@ CPP=g++
 LDFLAGS=
 CFLAGS=
 
+CFLAGS+=-pedantic
 
 # Developer flags (gdb)
 CFLAGS+=-ggdb

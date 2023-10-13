@@ -20,23 +20,19 @@
 #include "UsbEndpoint.h"
 
 class UsbConfiguration {
-public:
-    UsbConfiguration(uint8_t bConfigurationValue,
-                     uint8_t bNumInterfaces,
-                     UsbInterface** interfaceArray,
-                     uint8_t iConfiguration = 0,
-                     uint8_t bmAttributes = 0xc0,
-                     uint8_t bMaxPower = 100);
+    public:
+        UsbConfiguration(uint8_t bConfigurationValue, uint8_t bNumInterfaces, UsbInterface **interfaceArray, uint8_t iConfiguration = 0,
+                         uint8_t bmAttributes = 0xc0, uint8_t bMaxPower = 100);
 
-    int GenerateConfigurationDescriptor(uint8_t* buffer, int offset);
-    UsbEndpoint* GetEndpoint(uint8_t endpointAddress);
+        int GenerateConfigurationDescriptor(uint8_t *buffer, int offset);
+        UsbEndpoint *GetEndpoint(uint8_t endpointAddress);
 
-    uint8_t bNumInterfaces;
-    uint8_t bConfigurationValue;
-    uint8_t iConfiguration;
-    uint8_t bmAttributes;
-    uint8_t bMaxPower;
-    UsbInterface** interfaceArray;
+        uint8_t bNumInterfaces;
+        uint8_t bConfigurationValue;
+        uint8_t iConfiguration;
+        uint8_t bmAttributes;
+        uint8_t bMaxPower;
+        UsbInterface **interfaceArray;
 };
 
 #endif // USB_CONFIGURATION_H

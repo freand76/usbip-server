@@ -26,37 +26,37 @@
 using namespace std;
 
 class UsbIpServer {
-public:
-    UsbIpServer(int tcpPort = 3240);
-    ~UsbIpServer();
-    void AddDevice(UsbDevice* dev, string path, string busId, int busNum, int devNum, enum usb_device_speed speed);
-    bool Init();
-    bool StartServer();
-    bool ConnectedClients();
-    void StopServer();
-    void ServerWorker();
-    bool StartConnectionThread(int clientSocketFd);
-    void ConnectionWorker(int clientSocketFd);
-private:
-    unsigned int TcpRead(int clientSocketFd, uint8_t* buffer, unsigned int readSize);
+    public:
+        UsbIpServer(int tcpPort = 3240);
+        ~UsbIpServer();
+        void AddDevice(UsbDevice *dev, string path, string busId, int busNum, int devNum, enum usb_device_speed speed);
+        bool Init();
+        bool StartServer();
+        bool ConnectedClients();
+        void StopServer();
+        void ServerWorker();
+        bool StartConnectionThread(int clientSocketFd);
+        void ConnectionWorker(int clientSocketFd);
 
-    uint8_t* UsbIpReplyDeviceList(int& txSize);
-    uint8_t* UsbIpReplyImport(int clientSocketFd, int& txSize);
-    uint8_t* UsbIpCommandHandler(int clientSocketFd, uint8_t* cmdHeadBuffer, int& txSize);
-    uint8_t* UsbIpUnlinkURB(uint8_t* cmdHeadBuffer, int& txSize);
-    uint8_t* UsbIpHandleURB(int clientSocketFd, uint8_t* cmdHeadBuffer, int& txSize);
+    private:
+        unsigned int TcpRead(int clientSocketFd, uint8_t *buffer, unsigned int readSize);
 
-    std::thread* serverThread;
-    std::vector<std::thread*> connectionThreads;
+        uint8_t *UsbIpReplyDeviceList(int &txSize);
+        uint8_t *UsbIpReplyImport(int clientSocketFd, int &txSize);
+        uint8_t *UsbIpCommandHandler(int clientSocketFd, uint8_t *cmdHeadBuffer, int &txSize);
+        uint8_t *UsbIpUnlinkURB(uint8_t *cmdHeadBuffer, int &txSize);
+        uint8_t *UsbIpHandleURB(int clientSocketFd, uint8_t *cmdHeadBuffer, int &txSize);
 
-    int serverSocketFd;
-    bool serverWorkerActive;
-    bool killServerWorker;
-    int activeClients;
-    int tcpPort;
+        std::thread *serverThread;
+        std::vector<std::thread *> connectionThreads;
 
-    UsbIpDevice usbIpDevice;
+        int serverSocketFd;
+        bool serverWorkerActive;
+        bool killServerWorker;
+        int activeClients;
+        int tcpPort;
 
+        UsbIpDevice usbIpDevice;
 };
 
 #endif // USB_IP_DRIVER_H

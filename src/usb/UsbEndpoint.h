@@ -18,18 +18,15 @@
 #include <stdint.h>
 
 class UsbEndpoint {
-public:
-    UsbEndpoint(uint8_t bEndpointAddress,
-                uint8_t bmAttributes,
-                uint16_t wMaxPacketSize,
-                uint8_t bInterval);
-    int GenerateConfigurationDescriptor(uint8_t* buffer, int offset);
-    virtual int Data(uint8_t* dataIn, uint8_t* dataOut, int transferLength) = 0;
+    public:
+        UsbEndpoint(uint8_t bEndpointAddress, uint8_t bmAttributes, uint16_t wMaxPacketSize, uint8_t bInterval);
+        int GenerateConfigurationDescriptor(uint8_t *buffer, int offset);
+        virtual int Data(uint8_t *dataIn, uint8_t *dataOut, int transferLength) = 0;
 
-    uint8_t bEndpointAddress;
-    uint8_t bmAttributes;
-    uint16_t wMaxPacketSize;
-    uint8_t bInterval;
+        uint8_t bEndpointAddress;
+        uint8_t bmAttributes;
+        uint16_t wMaxPacketSize;
+        uint8_t bInterval;
 };
 
 #endif // USB_ENDPOINT_H

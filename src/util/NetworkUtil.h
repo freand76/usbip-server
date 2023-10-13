@@ -18,9 +18,9 @@
 #include <stdint.h>
 
 namespace NetworkUtil {
-    unsigned int GetUint(uint8_t* buffer, int offset, int byteWidth);
-    int SetUint(unsigned int value, uint8_t* buffer, int offset, int byteWidth);
-    int AddData(uint8_t* data, uint8_t* buffer, int offset, int len);
-};
+    unsigned int GetUint(uint8_t *buffer, int offset, int byteWidth);
+    int SetUint(unsigned int value, uint8_t *buffer, int offset, int byteWidth);
+    int AddData(uint8_t *data, uint8_t *buffer, int offset, int len);
+}; // namespace NetworkUtil
 
 #endif // NETWORK_UTIL_H

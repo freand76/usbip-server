@@ -9,3 +9,5 @@ bulkio:
 clean:
 	make -f Makefile.hidmouse clean
 
+clang-format:
+	find src | grep -E "\.h$$|\.cc$$" | xargs clang-format -i
