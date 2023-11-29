@@ -52,6 +52,10 @@ Playing around with kernel modules and Virtual USB devices can cause the kernel 
 - A HID Mouse Device is implemented
 - A BulkIO Device is implemented
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=freand76/usbip-server&type=Date)](https://star-history.com/#freand76/usbip-server&Date)
+
 ## Todo
 - Handle several virtual USB devices in the UsbIpServer
 - Implement fully functional USB stack
