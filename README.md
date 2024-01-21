@@ -17,8 +17,8 @@ Playing around with kernel modules and Virtual USB devices can cause the kernel 
 
 !!! WARNING !!!
 
-## Build
-- cd usbip-server
+## Build C++ version
+- cd usbip-server/cpp
 - make
 
 ## Start
