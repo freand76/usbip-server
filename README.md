@@ -1,11 +1,21 @@
-# usbip-server
+# USB IP Server for USB Device Prototyping
 
-usbip is a part of the linux kernel (kernel version >= 3.17) and is used to export USB devices over TCP network from one computer (server) to another (client)
-The usbip protocol can also be used to create a playground for USB stack and/or USB device development.
+## usbip-server
 
-The goal for this project is to implement a usbip-server that can handle USB devices in a VSP (Virtual System Prototype) environment.
+usbip is a part of the linux kernel (kernel version >= 3.17) and it is used to export
+USB devices over TCP network from one computer (server) to another (client)
+
+The usbip protocol can also be used to, like in this project, create a playground for
+USB stack and/or USB device development.
+
+The goal for this project is to implement a usbip-server that can be used for USB
+device prototyping on a linux host.
+
+The code in **src/** is a C implementation of a C++ version I did back in 2016.
+The C++ version is still available in the **cpp/** folderc, but (I do not think) it will not be updated.
 
 ## Requirements
+
 - linux kernel >= 3.17
 - package linux-tools-generic [apt-get install linux-tools-generic]
 
@@ -13,49 +23,59 @@ The goal for this project is to implement a usbip-server that can handle USB dev
 
 !!! WARNING !!!
 
-Playing around with kernel modules and Virtual USB devices can cause the kernel to hang!
+    Playing around with kernel modules and Virtual USB devices can cause the kernel to hang!
 
 !!! WARNING !!!
 
-## Build C++ version
-- cd usbip-server/cpp
-- make
+## Build C version
+
+```
+$ make
+```
 
 ## Start
 
-#### HidMouse
-- .x86/HidMouse -vv
-
-#### BulkIO
-- .x86/BulkIO -vv
-
-###### Test Tool
-- sudo ./tools/test_bulkio.py
+#### CDC Device (Will be available as a ttyACMx device under linux)
+- out/usb_cdc_device
 
 ## Attach Virtual Device
 
-### Load Module
-- sudo modprobe vhci-hcd
+### Load Kernel Module to Handle USBIP
+
+```
+$ sudo modprobe vhci-hcd
+```
 
 ### List Devices
-- usbip list -r **host**
+
+```
+$ usbip list -r **host**
+```
 
 ### Attach Virtual USB Device
-- sudo usbip attach -b 1-1 -r **host**
+
+```
+$ sudo usbip attach -b 1-1 -r **host**
+```
+
+If you want to attach the USB device on the machine running the usb_ip_server you should exchange **host*' with **localhost**.
 
 ### Detach Virtual USB Device
-- sudo usbip detach -p 0
+
+```
+$ sudo usbip detach -p 0
+```
 
 ## Current State
+
 - Handles 1 (one) device over the usbip protocol
-- USB Stack handles a single interrupt endpoint (at least)
-- A HID Mouse Device is implemented
-- A BulkIO Device is implemented
+- A USB CDC Device is implemented
 
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=freand76/usbip-server&type=Date)](https://star-history.com/#freand76/usbip-server&Date)
 
 ## Todo
-- Handle several virtual USB devices in the UsbIpServer
-- Implement fully functional USB stack
+
+- Implement more device examples
+
