@@ -21,11 +21,7 @@ The C++ version is still available in the **cpp/** folderc, but (I do not think)
 
 ## Disclaimer
 
-!!! WARNING !!!
-
-    Playing around with kernel modules and Virtual USB devices can cause the kernel to hang!
-
-!!! WARNING !!!
+*!!! WARNING !!! Playing around with kernel modules and Virtual USB devices can cause the kernel to hang!*
 
 ## Build C version
 
@@ -61,7 +57,8 @@ $ usbip list -r **host**
 $ sudo usbip attach -b 1-1 -r **host**
 ```
 
-If you want to attach the USB device on the machine running the usb_ip_server you should exchange **host** with **localhost**.
+If you want to attach the USB device on the machine running the usb_ip_server you
+should exchange **host** with **localhost**.
 
 ### Detach Virtual USB Device
 
