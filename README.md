@@ -36,7 +36,10 @@ $ make
 ## Start
 
 #### CDC Device (Will be available as a ttyACMx device under linux)
-- out/usb_cdc_device
+
+```
+$ out/usb_cdc_device
+```
 
 ## Attach Virtual Device
 
