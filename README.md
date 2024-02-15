@@ -61,7 +61,7 @@ $ usbip list -r **host**
 $ sudo usbip attach -b 1-1 -r **host**
 ```
 
-If you want to attach the USB device on the machine running the usb_ip_server you should exchange **host*' with **localhost**.
+If you want to attach the USB device on the machine running the usb_ip_server you should exchange **host** with **localhost**.
 
 ### Detach Virtual USB Device
 
