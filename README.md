@@ -48,17 +48,17 @@ $ sudo modprobe vhci-hcd
 ### List Devices
 
 ```
-$ usbip list -r **host**
+$ usbip list -r <host>
 ```
 
 ### Attach Virtual USB Device
 
 ```
-$ sudo usbip attach -b 1-1 -r **host**
+$ sudo usbip attach -b 1-1 -r <host>
 ```
 
-If you want to attach the USB device on the machine running the usb_ip_server you
-should exchange **host** with **localhost**.
+If you want to attach the USB device on the machine running the usbip server you
+should exchange **<host>** with **localhost**.
 
 ### Detach Virtual USB Device
 
