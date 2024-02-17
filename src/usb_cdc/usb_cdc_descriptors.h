@@ -79,7 +79,6 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     /*Interface Descriptor */
     0x09,                          /* bLength: Interface Descriptor size */
     USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType: Interface */
-    /* Interface descriptor type */
     0x00, /* bInterfaceNumber: Number of Interface */
     0x00, /* bAlternateSetting: Alternate setting */
     0x01, /* bNumEndpoints: One endpoints used */
@@ -93,7 +92,7 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     0x24, /* bDescriptorType: CS_INTERFACE */
     0x00, /* bDescriptorSubtype: Header Func Desc */
     0x10, /* bcdCDC: spec release number */
-    0x01,
+    0x01, /**/
 
     /*Call Management Functional Descriptor*/
     0x05, /* bFunctionLength */
@@ -121,7 +120,8 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     0x82,                             /* bEndpointAddress */
     0x03,                             /* bmAttributes: Interrupt */
     LOBYTE(CDC_CMD_PACKET_SZE),       /* wMaxPacketSize: */
-    HIBYTE(CDC_CMD_PACKET_SZE), 0x10, /* bInterval: */
+    HIBYTE(CDC_CMD_PACKET_SZE),       /**/
+    0x10,                             /* bInterval: */
 
     /*---------------------------------------------------------------------------*/
 
@@ -142,7 +142,8 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     0x01,                              /* bEndpointAddress */
     0x02,                              /* bmAttributes: Bulk */
     LOBYTE(CDC_DATA_PACKET_SZE),       /* wMaxPacketSize: */
-    HIBYTE(CDC_DATA_PACKET_SZE), 0x00, /* bInterval: ignore for Bulk transfer */
+    HIBYTE(CDC_DATA_PACKET_SZE),       /**/
+    0x00,                              /* bInterval: ignore for Bulk transfer */
 
     /*Endpoint IN Descriptor*/
     0x07,                             /* bLength: Endpoint Descriptor size */
@@ -150,7 +151,8 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     0x81,                             /* bEndpointAddress */
     0x02,                             /* bmAttributes: Bulk */
     LOBYTE(CDC_DATA_PACKET_SZE),      /* wMaxPacketSize: */
-    HIBYTE(CDC_DATA_PACKET_SZE), 0x00 /* bInterval */
+    HIBYTE(CDC_DATA_PACKET_SZE),      /**/
+    0x00,                             /* bInterval */
 };
 
 //

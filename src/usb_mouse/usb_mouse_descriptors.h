@@ -92,23 +92,23 @@ static const uint8_t usb_mouse_configuration[USB_MOUSE_CONFIG_DESC_LENGTH] = {
     0x02,                          /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
     0,                             /*iInterface: Index of string descriptor*/
     /******************** Descriptor of Joystick Mouse HID ********************/
-    0x09,                      /*bLength: HID Descriptor size*/
-    USB_DESCRIPTOR_TYPE_HID,   /*bDescriptorType: HID*/
-    LOBYTE(USB_HID_BCD),       /*bcdHID: HID Class Spec release number*/
-    HIBYTE(USB_HID_BCD), 0x00, /*bCountryCode: Hardware target country*/
-    0x01,                      /*bNumDescriptors: Number of HID class descriptors to follow*/
-    0x22,                      /*bDescriptorType*/
+    0x09,                       /*bLength: HID Descriptor size*/
+    USB_DESCRIPTOR_TYPE_HID,    /*bDescriptorType: HID*/
+    LOBYTE(USB_HID_BCD),        /*bcdHID: HID Class Spec release number*/
+    HIBYTE(USB_HID_BCD),        /**/
+    0x00,                       /*bCountryCode: Hardware target country*/
+    0x01,                       /*bNumDescriptors: Number of HID class descriptors to follow*/
+    USB_DESCRIPTOR_TYPE_REPORT, /*bDescriptorType*/
     LOBYTE(HID_MOUSE_REPORT_DESC_LENGTH), /*wItemLength: Total length of Report descriptor*/
-    HIBYTE(HID_MOUSE_REPORT_DESC_LENGTH),
+    HIBYTE(HID_MOUSE_REPORT_DESC_LENGTH), /**/
     /******************** Descriptor of Mouse endpoint ********************/
     0x07,                         /*bLength: Endpoint Descriptor size*/
     USB_DESCRIPTOR_TYPE_ENDPOINT, /*bDescriptorType:*/
-
-    USB_MOUSE_HID_EP_DATA_IN,    /*bEndpointAddress: Endpoint Address (IN)*/
-    0x03,                        /*bmAttributes: Interrupt endpoint*/
-    0x04,                        /*wMaxPacketSize: 4 Byte max */
-    0x00,                        /**/
-    USB_MOUSE_HID_POLL_INTERVAL, /*bInterval: Polling Interval (10 ms)*/
+    USB_MOUSE_HID_EP_DATA_IN,     /*bEndpointAddress: Endpoint Address (IN)*/
+    0x03,                         /*bmAttributes: Interrupt endpoint*/
+    0x04,                         /*wMaxPacketSize: 4 Byte max */
+    0x00,                         /**/
+    USB_MOUSE_HID_POLL_INTERVAL,  /*bInterval: Polling Interval (10 ms)*/
 };
 
 //

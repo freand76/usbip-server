@@ -32,19 +32,11 @@ static void control_data(const uint8_t *setup, const uint8_t *data, size_t data_
     uint8_t bRequest = setup[1];
 
     if ((bRequestType == 0x81) && (bRequest == USB_REQUEST_GET_DESCRIPTOR)) {
-        if (setup[3] == 0x22) {
+        if (setup[3] == USB_DESCRIPTOR_TYPE_REPORT) {
             uint16_t length = setup[7] << 8 | setup[6];
             usbip_device_transmit(0, usb_mouse_hid_report, length);
         }
     }
-}
-
-static void endpoint_data(uint8_t ep, const uint8_t *data, size_t data_length) {
-    printf("EP (0x%x) Data: ", ep);
-    for (size_t idx = 0; idx < data_length; idx++) {
-        printf("0x%x (%c), ", data[idx], (char)data[idx]);
-    }
-    printf("\n");
 }
 
 static const usbip_device_t mouse_device = {
@@ -53,7 +45,7 @@ static const usbip_device_t mouse_device = {
     .langid_desc = langid_desc,
     .usb_strings = usb_strings,
     .control_data_callback = control_data,
-    .ep_data_callback = endpoint_data,
+    .ep_data_callback = NULL,
 };
 
 #define CIRCLE_RADIUS 200

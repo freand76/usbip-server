@@ -104,7 +104,8 @@ bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
             // Control
             usbip_device_control(usb_device, cmd_submit.setup, rx_buffer, transfer_buffer_length);
         } else {
-            if ((direction == 0) && (transfer_buffer_length > 0)) {
+            if ((direction == 0) && (transfer_buffer_length > 0) &&
+                (usb_device->ep_data_callback != NULL)) {
                 usb_device->ep_data_callback(ep, rx_buffer, transfer_buffer_length);
             }
         }
