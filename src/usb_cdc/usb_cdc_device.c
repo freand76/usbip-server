@@ -22,7 +22,6 @@
 #include <unistd.h>
 
 #include "usbip_server_api.h"
-
 #include "usb_cdc_descriptors.h"
 
 #define CDC_SET_LINE_CODING (0x20)

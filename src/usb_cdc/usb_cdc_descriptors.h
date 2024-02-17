@@ -34,16 +34,14 @@ static const usb_string_t usb_strings[] = {
 // Device Descriptor
 //
 
-#define USB_LEN_DEV_DESC (18)
 #define USB_VID 0xfafa
 #define USB_PID 0x0001
-#define USB_DEV_RELEASE 0x0101
 
-static const uint8_t usb_device_descriptor[USB_LEN_DEV_DESC] = {
-    USB_LEN_DEV_DESC, // bLength
-    0x01,             // bDescriptorType
-    0x00,             // bcdUSB
-    0x02,
+static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
+    USB_DEVICE_DESCRIPTOR_LENGTH, // bLength
+    USB_DESCRIPTOR_TYPE_DEVICE,   // bDescriptorType
+    LOBYTE(USB_BCD_VERSION),      // bcdUSB
+    HIBYTE(USB_BCD_VERSION),
     0x00,            // bDeviceClass (use class information in the interface descriptors)
     0x00,            // bDeviceSubClass
     0x00,            // bDeviceProtocol
@@ -52,8 +50,8 @@ static const uint8_t usb_device_descriptor[USB_LEN_DEV_DESC] = {
     HIBYTE(USB_VID),
     LOBYTE(USB_PID), // idProduct
     HIBYTE(USB_PID),
-    LOBYTE(USB_DEV_RELEASE), // bcdDevice - USB device release number
-    HIBYTE(USB_DEV_RELEASE),
+    LOBYTE(USB_BCD_DEVICE_REL), // bcdDevice - USB device release number
+    HIBYTE(USB_BCD_DEVICE_REL),
     1, // Index of manufacturer string
     2, // Index of product string
     4, // Index of serial number string
@@ -64,23 +62,23 @@ static const uint8_t usb_device_descriptor[USB_LEN_DEV_DESC] = {
 // Configuration ID Descriptor
 //
 
-#define USB_CDC_CONFIG_DESC_SIZ (67)
+#define USB_CDC_CONFIG_DESC_LENGTH (67)
 #define CDC_CMD_PACKET_SZE 8    /* Control Endpoint Packet size */
 #define CDC_DATA_PACKET_SZE 512 /* Data Endpoint Packet size */
 
-uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_SIZ] = {
-    0x09,                                  /* bLength: Configuration Descriptor size */
-    0x02,                                  /* bDescriptorType */
-    LOBYTE(USB_CDC_CONFIG_DESC_SIZ),       /* wTotalLength */
-    HIBYTE(USB_CDC_CONFIG_DESC_SIZ), 0x02, /* bNumInterfaces: 2 interfaces */
-    0x01,                                  /* bConfigurationValue: */
-    0x04,                                  /* iConfiguration: */
-    0xC0,                                  /* bmAttributes: */
-    0x32,                                  /* MaxPower 100 mA */
+uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
+    0x09,                                     /* bLength: Configuration Descriptor size */
+    USB_DESCRIPTOR_TYPE_CONFIGURATION,        /* bDescriptorType */
+    LOBYTE(USB_CDC_CONFIG_DESC_LENGTH),       /* wTotalLength */
+    HIBYTE(USB_CDC_CONFIG_DESC_LENGTH), 0x02, /* bNumInterfaces: 2 interfaces */
+    0x01,                                     /* bConfigurationValue: */
+    0x04,                                     /* iConfiguration: */
+    0xC0,                                     /* bmAttributes: */
+    0x32,                                     /* MaxPower 100 mA */
 
     /*Interface Descriptor */
-    0x09, /* bLength: Interface Descriptor size */
-    0x04, /* bDescriptorType: Interface */
+    0x09,                          /* bLength: Interface Descriptor size */
+    USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType: Interface */
     /* Interface descriptor type */
     0x00, /* bInterfaceNumber: Number of Interface */
     0x00, /* bAlternateSetting: Alternate setting */
@@ -119,7 +117,7 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_SIZ] = {
 
     /*Endpoint 2 Descriptor*/
     0x07,                             /* bLength: Endpoint Descriptor size */
-    0x05,                             /* bDescriptorType: Endpoint */
+    USB_DESCRIPTOR_TYPE_ENDPOINT,     /* bDescriptorType: Endpoint */
     0x82,                             /* bEndpointAddress */
     0x03,                             /* bmAttributes: Interrupt */
     LOBYTE(CDC_CMD_PACKET_SZE),       /* wMaxPacketSize: */
@@ -128,19 +126,19 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_SIZ] = {
     /*---------------------------------------------------------------------------*/
 
     /*Data class interface descriptor*/
-    0x09, /* bLength: Endpoint Descriptor size */
-    0x04, /* bDescriptorType: */
-    0x01, /* bInterfaceNumber: Number of Interface */
-    0x00, /* bAlternateSetting: Alternate setting */
-    0x02, /* bNumEndpoints: Two endpoints used */
-    0x0A, /* bInterfaceClass: CDC */
-    0x00, /* bInterfaceSubClass: */
-    0x00, /* bInterfaceProtocol: */
-    0x00, /* iInterface: */
+    0x09,                          /* bLength: Endpoint Descriptor size */
+    USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType: */
+    0x01,                          /* bInterfaceNumber: Number of Interface */
+    0x00,                          /* bAlternateSetting: Alternate setting */
+    0x02,                          /* bNumEndpoints: Two endpoints used */
+    0x0A,                          /* bInterfaceClass: CDC */
+    0x00,                          /* bInterfaceSubClass: */
+    0x00,                          /* bInterfaceProtocol: */
+    0x00,                          /* iInterface: */
 
     /*Endpoint OUT Descriptor*/
     0x07,                              /* bLength: Endpoint Descriptor size */
-    0x05,                              /* bDescriptorType: Endpoint */
+    USB_DESCRIPTOR_TYPE_ENDPOINT,      /* bDescriptorType: Endpoint */
     0x01,                              /* bEndpointAddress */
     0x02,                              /* bmAttributes: Bulk */
     LOBYTE(CDC_DATA_PACKET_SZE),       /* wMaxPacketSize: */
@@ -148,7 +146,7 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_SIZ] = {
 
     /*Endpoint IN Descriptor*/
     0x07,                             /* bLength: Endpoint Descriptor size */
-    0x05,                             /* bDescriptorType: Endpoint */
+    USB_DESCRIPTOR_TYPE_ENDPOINT,     /* bDescriptorType: Endpoint */
     0x81,                             /* bEndpointAddress */
     0x02,                             /* bmAttributes: Bulk */
     LOBYTE(CDC_DATA_PACKET_SZE),      /* wMaxPacketSize: */
@@ -160,11 +158,11 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_SIZ] = {
 //
 
 #define USB_LANGID_STRING 0x409 /* 1033 US.S English */
-#define USB_LEN_LANGID_STR_DESC (4)
+#define USB_LANGID_DESC_LENGTH (4)
 
-static const uint8_t langid_desc[USB_LEN_LANGID_STR_DESC] = {
-    0x04,
-    0x03,
+static const uint8_t langid_desc[USB_LANGID_DESC_LENGTH] = {
+    USB_LANGID_DESC_LENGTH,
+    USB_DESCRIPTOR_TYPE_STRING,
     LOBYTE(USB_LANGID_STRING),
     HIBYTE(USB_LANGID_STRING),
 };

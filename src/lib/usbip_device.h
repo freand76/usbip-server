@@ -20,6 +20,8 @@
 
 #include "usbip_server_api.h"
 
+void usbip_device_stop(void);
+
 uint8_t *usbip_device_get_ep_buffer(uint8_t ep, size_t *buffer_size);
 
 void usbip_device_release_buffer(uint8_t ep);

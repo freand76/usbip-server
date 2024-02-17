@@ -31,10 +31,16 @@ $ make
 
 ## Start
 
-#### CDC Device (Will be available as a ttyACMx device under linux)
+### CDC Device (Will be available as a ttyACMx device under linux)
 
 ```
 $ out/usb_cdc_device
+```
+
+### Mouse Device (Will start to move your mouse pointer)
+
+```
+$ out/usb_mouse_device
 ```
 
 ## Attach Virtual Device
@@ -73,7 +79,6 @@ $ sudo usbip detach -p 0
 ## Current State
 
 - Handles 1 (one) device over the usbip protocol
-- A USB CDC Device is implemented
 
 ## Star History
 
@@ -82,4 +87,5 @@ $ sudo usbip detach -p 0
 ## Todo
 
 - Implement more device examples
+- Understand and handle usbip unlink command better
 

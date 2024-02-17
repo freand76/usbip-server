@@ -10,7 +10,7 @@ BUILD_LIB_DIR=out/lib
 ### TARGETS
 ### 
 
-TARGETS += $(BUILD_DIR)/usb_cdc_device
+TARGETS += $(BUILD_DIR)/usb_cdc_device $(BUILD_DIR)/usb_mouse_device
 
 all: $(TARGETS)
 
@@ -73,11 +73,31 @@ CFLAGS += -I src/usb_cdc
 USB_CDC_SOURCES = \
 	usb_cdc_device.c
 
-CDC_OBJECTS = $(addprefix $(BUILD_DIR)/, $(USB_CDC_SOURCES:.c=.o))
-CDC_OBJECTS += $(LIBRARY_ARCHIVE)
+USB_CDC_OBJECTS = $(addprefix $(BUILD_DIR)/, $(USB_CDC_SOURCES:.c=.o))
+USB_CDC_OBJECTS += $(LIBRARY_ARCHIVE)
 
 
-$(BUILD_DIR)/usb_cdc_device: $(CDC_OBJECTS) | $(BUILD_DIR) 
+$(BUILD_DIR)/usb_cdc_device: $(USB_CDC_OBJECTS) | $(BUILD_DIR) 
+	@echo "  Linking $(notdir $<) to $(notdir $@)"
+	@$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -o $@
+
+
+###
+### BUILD USB_MOUSE DEVICE
+### 
+
+vpath %.c src/usb_mouse
+
+CFLAGS += -I src/usb_mouse
+
+USB_MOUSE_SOURCES = \
+	usb_mouse_device.c
+
+USB_MOUSE_OBJECTS = $(addprefix $(BUILD_DIR)/, $(USB_MOUSE_SOURCES:.c=.o))
+USB_MOUSE_OBJECTS += $(LIBRARY_ARCHIVE)
+
+
+$(BUILD_DIR)/usb_mouse_device: $(USB_MOUSE_OBJECTS) | $(BUILD_DIR) 
 	@echo "  Linking $(notdir $<) to $(notdir $@)"
 	@$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -o $@
 

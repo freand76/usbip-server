@@ -19,6 +19,7 @@
 #include <string.h>
 #include <pthread.h>
 
+#include "descriptor_utils.h"
 #include "usbip_device.h"
 
 pthread_mutex_t ep_access_mutex;
@@ -26,27 +27,40 @@ pthread_mutex_t ep_access_mutex;
 #define NUMBER_OF_ENDPOINTS (16)
 #define ENDPOINT_MAX_DATA_LENGTH (512)
 
+#define USB_REQUEST_RECIPIENT_DEVICE (0)
+#define USB_REQUEST_RECIPIENT_INTERFACE (1)
+
 typedef struct {
         uint8_t data[ENDPOINT_MAX_DATA_LENGTH];
         size_t data_length;
-    pthread_mutex_t ep_lock;
+        pthread_mutex_t ep_lock;
 } device_endpoint_data_t;
 
+static bool device_stopped = false;
 static device_endpoint_data_t endpoint_data[NUMBER_OF_ENDPOINTS];
 
 static const char *get_string(const usbip_device_t *usb_device, uint8_t index);
 static void device_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
                            size_t req_size);
-static void interface_request(uint8_t *usb_setup, uint8_t *buffer, size_t req_size);
+static void interface_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
+                              size_t req_size);
 
+void usbip_device_stop(void) {
+    device_stopped = true;
+    for (size_t idx = 0; idx < NUMBER_OF_ENDPOINTS; idx++) {
+        usbip_device_release_buffer(idx);
+    }
+}
 
 void usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length) {
     uint8_t ep_masked = ep & 0xf;
-    pthread_mutex_lock(&endpoint_data[ep_masked].ep_lock);
-    pthread_mutex_lock(&ep_access_mutex);
-    memcpy(endpoint_data[ep_masked].data, data, data_length);
-    endpoint_data[ep_masked].data_length = data_length;
-    pthread_mutex_unlock(&ep_access_mutex);
+    if (!device_stopped) {
+        pthread_mutex_lock(&endpoint_data[ep_masked].ep_lock);
+        pthread_mutex_lock(&ep_access_mutex);
+        memcpy(endpoint_data[ep_masked].data, data, data_length);
+        endpoint_data[ep_masked].data_length = data_length;
+        pthread_mutex_unlock(&ep_access_mutex);
+    }
 }
 
 uint8_t *usbip_device_get_ep_buffer(uint8_t ep, size_t *buffer_size) {
@@ -76,10 +90,10 @@ void usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint
     if (bmRequestType & 0x20) {
         /* Vendor */
         usb_device->control_data_callback(setup, buffer, length);
-    } else if (bfRecipient == 0) {
+    } else if (bfRecipient == USB_REQUEST_RECIPIENT_DEVICE) {
         device_request(usb_device, setup, buffer, length);
-    } else if (bfRecipient == 1) {
-        interface_request(setup, buffer, length);
+    } else if (bfRecipient == USB_REQUEST_RECIPIENT_INTERFACE) {
+        interface_request(usb_device, setup, buffer, length);
     } else {
         printf("USBIPDevice: Unknown bfRecipient = %x\n", bfRecipient);
     }
@@ -114,20 +128,20 @@ static void device_request(const usbip_device_t *usb_device, uint8_t *setup, uin
     uint8_t bRequest = setup[1];
     uint8_t bfDataDirection = bmRequestType & 0x80;
     if (bfDataDirection != 0) {
-        if (bRequest == 0x00) {
+        if (bRequest == USB_REQUEST_GET_STATUS) {
             uint8_t tx_buffer[2];
             tx_buffer[0] = 0x00;
             tx_buffer[1] = 0x01;
             usbip_device_transmit(0, tx_buffer, sizeof(tx_buffer));
-        } else if (bRequest == 0x06) {
+        } else if (bRequest == USB_REQUEST_GET_DESCRIPTOR) {
 
             uint8_t bDescriptorType = setup[3];
             uint8_t bDescriptorIndex = setup[2];
-            if (bDescriptorType == 1) {
+            if (bDescriptorType == USB_DESCRIPTOR_TYPE_DEVICE) {
                 usbip_device_transmit(0, usb_device->device_desc, req_size);
-            } else if (bDescriptorType == 2) {
+            } else if (bDescriptorType == USB_DESCRIPTOR_TYPE_CONFIGURATION) {
                 usbip_device_transmit(0, usb_device->config_desc, req_size);
-            } else if (bDescriptorType == 3) {
+            } else if (bDescriptorType == USB_DESCRIPTOR_TYPE_STRING) {
                 if (bDescriptorIndex == 0) {
                     size_t tx_length = (req_size < usb_device->langid_desc[0])
                                            ? req_size
@@ -156,8 +170,8 @@ static void device_request(const usbip_device_t *usb_device, uint8_t *setup, uin
     }
 }
 
-static void interface_request(uint8_t *setup, uint8_t *buffer, size_t req_size) {
-    (void)setup;
-    (void)buffer;
-    (void)req_size;
+static void interface_request(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
+                              size_t req_size) {
+    /* Let device handle interface requests */
+    usb_device->control_data_callback(setup, buffer, req_size);
 }

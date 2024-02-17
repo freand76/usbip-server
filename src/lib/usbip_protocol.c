@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include <linux/usb/ch9.h>
 
@@ -27,6 +28,7 @@
 
 #define USBIP_MAX_PACKET_SIZE (4096)
 #define USBIP_PROTOCOL_VERSION (0x0111)
+#define EP_STALL (-32)
 
 static bool device_imported = false;
 
@@ -106,10 +108,16 @@ bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
                 usb_device->ep_data_callback(ep, rx_buffer, transfer_buffer_length);
             }
         }
-        uint8_t *ep_buf = usbip_device_get_ep_buffer(ep, &tx_length);
-        if (tx_length > 0) {
-            memcpy(tx_buffer, ep_buf, tx_length);
-            usbip_device_release_buffer(ep);
+
+        uint32_t ret_status = 0;
+        {
+            uint8_t *ep_buf = usbip_device_get_ep_buffer(ep, &tx_length);
+            if (tx_length > 0) {
+                memcpy(tx_buffer, ep_buf, tx_length);
+                usbip_device_release_buffer(ep);
+            } else {
+                // ret_status = EP_STALL;
+            }
         }
 
         usbip_header_basic_t ret_header = {0};
@@ -123,7 +131,7 @@ bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
         }
 
         usbip_ret_submit_t ret_submit = {0};
-        ret_submit.status = SWAP32(0);
+        ret_submit.status = SWAP32(ret_status);
         ret_submit.actual_length = SWAP32(tx_length);
         ret_submit.start_frame = SWAP32(0);
         ret_submit.number_of_packets = SWAP32(0xffffffff);

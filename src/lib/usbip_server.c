@@ -73,6 +73,7 @@ static void *usbip_server_worker_thread(void *arg) {
         printf("USBIPServer: Close Client\n");
         tcpip_server_close_client();
     }
+    usbip_device_stop();
     printf("USBIPServer: Close Server\n");
     tcpip_server_close();
     worker_stopped = true;
