@@ -36,7 +36,6 @@ $(BUILD_DIR)/%.o : %.c | $(BUILD_DIR)
 	@$(COMPILE.c) $(CFLAGS-$@) -o $@ $<
 
 
-
 ###
 ### GENERIC DEPENDS
 ###
@@ -44,6 +43,7 @@ $(BUILD_DIR)/%.o : %.c | $(BUILD_DIR)
 SOURCES := $(shell find src/ -iname *.c)
 DEPENDS := $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.c=.d)))
 -include $(DEPENDS)
+
 
 ###
 ### BUILD USBIP_SERVER LIBRARY
@@ -108,6 +108,7 @@ USB_MOUSE_OBJECTS += $(LIBRARY_ARCHIVE)
 $(BUILD_DIR)/usb_mouse_device: $(USB_MOUSE_OBJECTS) | $(BUILD_DIR)
 	@echo "  Linking $(notdir $<) to $(notdir $@)"
 	@$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -lm -o $@
+
 
 ###
 ### CLEAN
