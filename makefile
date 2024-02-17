@@ -1,6 +1,6 @@
 ###
 ### OUTPUT FOLDERS
-### 
+###
 
 BUILD_DIR=out
 BUILD_LIB_DIR=out/lib
@@ -8,16 +8,15 @@ BUILD_LIB_DIR=out/lib
 
 ###
 ### TARGETS
-### 
+###
 
 TARGETS += $(BUILD_DIR)/usb_cdc_device $(BUILD_DIR)/usb_mouse_device
 
 all: $(TARGETS)
 
-
 ###
 ### COMMON FLAGS AND RULES
-### 
+###
 
 CFLAGS += -std=c99 \
 	-pedantic -Wall -Werror -Wextra \
@@ -27,7 +26,7 @@ CFLAGS += -std=c99 \
 CFLAGS += -D_GNU_SOURCE
 
 $(BUILD_DIR):
-	@mkdir -p $(BUILD_DIR) 
+	@mkdir -p $(BUILD_DIR)
 
 $(BUILD_LIB_DIR):
 	@mkdir -p $(BUILD_LIB_DIR)
@@ -37,9 +36,18 @@ $(BUILD_DIR)/%.o : %.c | $(BUILD_DIR)
 	@$(COMPILE.c) $(CFLAGS-$@) -o $@ $<
 
 
+
 ###
-### BUILD USBIP_SERVER LIBRARY 
-### 
+### GENERIC DEPENDS
+###
+
+SOURCES := $(shell find src/ -iname *.c)
+DEPENDS := $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.c=.d)))
+-include $(DEPENDS)
+
+###
+### BUILD USBIP_SERVER LIBRARY
+###
 
 vpath %.c src/lib
 
@@ -64,7 +72,7 @@ $(LIBRARY_ARCHIVE): $(LIBRARY_OBJECTS) | $(BUILD_LIB_DIR)
 
 ###
 ### BUILD USB_CDC DEVICE
-### 
+###
 
 vpath %.c src/usb_cdc
 
@@ -77,14 +85,14 @@ USB_CDC_OBJECTS = $(addprefix $(BUILD_DIR)/, $(USB_CDC_SOURCES:.c=.o))
 USB_CDC_OBJECTS += $(LIBRARY_ARCHIVE)
 
 
-$(BUILD_DIR)/usb_cdc_device: $(USB_CDC_OBJECTS) | $(BUILD_DIR) 
+$(BUILD_DIR)/usb_cdc_device: $(USB_CDC_OBJECTS) | $(BUILD_DIR)
 	@echo "  Linking $(notdir $<) to $(notdir $@)"
 	@$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -o $@
 
 
 ###
 ### BUILD USB_MOUSE DEVICE
-### 
+###
 
 vpath %.c src/usb_mouse
 
@@ -97,23 +105,13 @@ USB_MOUSE_OBJECTS = $(addprefix $(BUILD_DIR)/, $(USB_MOUSE_SOURCES:.c=.o))
 USB_MOUSE_OBJECTS += $(LIBRARY_ARCHIVE)
 
 
-$(BUILD_DIR)/usb_mouse_device: $(USB_MOUSE_OBJECTS) | $(BUILD_DIR) 
+$(BUILD_DIR)/usb_mouse_device: $(USB_MOUSE_OBJECTS) | $(BUILD_DIR)
 	@echo "  Linking $(notdir $<) to $(notdir $@)"
-	@$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -o $@
-
-
-###
-### GENERIC DEPENDS
-### 
-
-SOURCES := $(sort $(foreach path,${VPATH},$(wildcard $(path)/*.c)))
-DEPENDS := $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.c=.d)))
-
--include $(DEPENDS)
+	@$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -lm -o $@
 
 ###
 ### CLEAN
-### 
+###
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -121,11 +119,9 @@ clean:
 
 ###
 ### FORMAT SOURCE FILES WITH CLANG FORMAT
-### 
+###
 
 format:
 	@find src/. -iname *.h -o -name *.c | xargs clang-format -i
-	@find include/. -iname *.h  | xargs clang-format -i	
+	@find include/. -iname *.h  | xargs clang-format -i
 	git status
-
-

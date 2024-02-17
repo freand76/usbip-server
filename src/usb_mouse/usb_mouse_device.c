@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "usbip_server_api.h"
 #include "usb_mouse_descriptors.h"
@@ -55,9 +56,15 @@ static const usbip_device_t mouse_device = {
     .ep_data_callback = endpoint_data,
 };
 
+#define CIRCLE_RADIUS 200
+#define CIRCLE_ROUND_TRIP_TIME_MS 1000
+#define NUMBER_OF_STEPS (CIRCLE_ROUND_TRIP_TIME_MS / USB_MOUSE_HID_POLL_INTERVAL_MS)
+
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
+
+    uint16_t step_counter = 0;
 
     if (!usbip_server_start(&mouse_device)) {
         printf("ERROR: usbip_server_start failed\n");
@@ -67,11 +74,24 @@ int main(int argc, char *argv[]) {
     printf("USB Mouse Device Activated\n");
 
     while (!usbip_server_interrupted()) {
-        usleep(500000);
+        float old_angle = (2 * M_PI * step_counter) / NUMBER_OF_STEPS;
+        int16_t old_pos_x = CIRCLE_RADIUS * cos(old_angle);
+        int16_t old_pos_y = CIRCLE_RADIUS * sin(old_angle);
+        step_counter++;
+        if (step_counter >= NUMBER_OF_STEPS) {
+            step_counter = 0;
+        }
+        float new_angle = (2 * M_PI * step_counter) / NUMBER_OF_STEPS;
+        int16_t new_pos_x = CIRCLE_RADIUS * cos(new_angle);
+        int16_t new_pos_y = CIRCLE_RADIUS * sin(new_angle);
+
+        int16_t delta_x = new_pos_x - old_pos_x;
+        int16_t delta_y = new_pos_y - old_pos_y;
+
         uint8_t out_buffer[4];
         out_buffer[0] = 0;
-        out_buffer[1] = 10;
-        out_buffer[2] = 10;
+        out_buffer[1] = delta_x;
+        out_buffer[2] = delta_y;
         out_buffer[3] = 0;
         usbip_device_transmit(USB_MOUSE_HID_EP_DATA_IN, out_buffer, sizeof(out_buffer));
     }

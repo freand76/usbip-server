@@ -37,7 +37,7 @@ $ make
 $ out/usb_cdc_device
 ```
 
-### Mouse Device (Will start to move your mouse pointer)
+### Mouse Device (Will start to move your mouse pointer in a circle)
 
 ```
 $ out/usb_mouse_device
