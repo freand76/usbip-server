@@ -111,7 +111,7 @@ bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
         }
 
         uint32_t ret_status = 0;
-        {
+        if (direction == 1) {
             uint8_t *ep_buf = usbip_device_get_ep_buffer(ep, &tx_length);
             if (tx_length > 0) {
                 memcpy(tx_buffer, ep_buf, tx_length);
