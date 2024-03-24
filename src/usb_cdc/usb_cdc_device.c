@@ -28,6 +28,8 @@
 #define CDC_SET_CONTROL_LINE_STATE (0x22)
 #define CDC_SEND_BREAK (0x23)
 
+#define INPUT_BUFFER_LENGTH 10
+
 typedef struct {
         bool DTR;
         bool RTS;
@@ -37,7 +39,10 @@ typedef struct {
         uint8_t data_bits;
 } cdc_state_t;
 
-static cdc_state_t cdc_state = {0};
+static volatile cdc_state_t cdc_state = {0};
+
+static uint8_t input_buffer[INPUT_BUFFER_LENGTH];
+static volatile size_t input_buffer_pos = 0;
 
 static void control_data(const uint8_t *setup, const uint8_t *data, size_t data_length) {
     uint8_t bRequest = setup[1];
@@ -69,11 +74,12 @@ static void control_data(const uint8_t *setup, const uint8_t *data, size_t data_
 }
 
 static void endpoint_data(uint8_t ep, const uint8_t *data, size_t data_length) {
-    printf("EP (0x%x) Data: ", ep);
-    for (size_t idx = 0; idx < data_length; idx++) {
-        printf("0x%x (%c), ", data[idx], (char)data[idx]);
+    (void)ep;
+
+    if ((input_buffer_pos + data_length) <= sizeof(input_buffer)) {
+        memcpy(&input_buffer[input_buffer_pos], data, data_length);
+        input_buffer_pos += data_length;
     }
-    printf("\n");
 }
 
 static const usbip_device_t cdc_device = {
@@ -105,6 +111,22 @@ int main(int argc, char *argv[]) {
             snprintf(str_buffer, sizeof(str_buffer), "Tick %d\n", tick_counter++);
             usbip_device_transmit(1, (uint8_t *)str_buffer, strlen(str_buffer));
         }
+
+        /**
+         * Enter critical section before messing with variables updated
+         * in interrupt context (input_buffer and input_buffer_pos
+         */
+        usbip_device_critical_section_enter();
+        if (input_buffer_pos > 0) {
+            printf("Input: ");
+            for (size_t idx = 0; idx < input_buffer_pos; idx++) {
+                printf("0x%.2x, ", input_buffer[idx]);
+            }
+            printf("\n");
+            input_buffer_pos = 0;
+        }
+        usbip_device_critical_section_exit();
+
         usleep(500000);
     }
 
