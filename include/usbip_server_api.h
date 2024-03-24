@@ -54,6 +54,18 @@ typedef struct {
 void usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length);
 
 /**
+ * @brief Enter critical section
+ *
+ * No USB device endpoint data will occur while in critical region
+ */
+void usbip_device_critical_section_enter(void);
+
+/**
+ * @brief Exit critical section
+ */
+void usbip_device_critical_section_exit(void);
+
+/**
  * @brief Start Virtual Device USBIP server
  */
 bool usbip_server_start(const usbip_device_t *usb_device);
@@ -67,6 +79,5 @@ void usbip_server_stop(void);
  * @brief Test if USBIP server has been interrupts (by Ctrl-C)
  */
 bool usbip_server_interrupted(void);
-
 
 #endif

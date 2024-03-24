@@ -79,13 +79,13 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     /*Interface Descriptor */
     0x09,                          /* bLength: Interface Descriptor size */
     USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType: Interface */
-    0x00, /* bInterfaceNumber: Number of Interface */
-    0x00, /* bAlternateSetting: Alternate setting */
-    0x01, /* bNumEndpoints: One endpoints used */
-    0x02, /* bInterfaceClass: Communication Interface Class */
-    0x02, /* bInterfaceSubClass: Abstract Control Model */
-    0x01, /* bInterfaceProtocol: Common AT commands */
-    0x00, /* iInterface: */
+    0x00,                          /* bInterfaceNumber: Number of Interface */
+    0x00,                          /* bAlternateSetting: Alternate setting */
+    0x01,                          /* bNumEndpoints: One endpoints used */
+    0x02,                          /* bInterfaceClass: Communication Interface Class */
+    0x02,                          /* bInterfaceSubClass: Abstract Control Model */
+    0x01,                          /* bInterfaceProtocol: Common AT commands */
+    0x00,                          /* iInterface: */
 
     /*Header Functional Descriptor*/
     0x05, /* bLength: Endpoint Descriptor size */
@@ -115,13 +115,13 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     0x01, /* bSlaveInterface0: Data Class Interface */
 
     /*Endpoint 2 Descriptor*/
-    0x07,                             /* bLength: Endpoint Descriptor size */
-    USB_DESCRIPTOR_TYPE_ENDPOINT,     /* bDescriptorType: Endpoint */
-    0x82,                             /* bEndpointAddress */
-    0x03,                             /* bmAttributes: Interrupt */
-    LOBYTE(CDC_CMD_PACKET_SZE),       /* wMaxPacketSize: */
-    HIBYTE(CDC_CMD_PACKET_SZE),       /**/
-    0x10,                             /* bInterval: */
+    0x07,                         /* bLength: Endpoint Descriptor size */
+    USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType: Endpoint */
+    0x82,                         /* bEndpointAddress */
+    0x03,                         /* bmAttributes: Interrupt */
+    LOBYTE(CDC_CMD_PACKET_SZE),   /* wMaxPacketSize: */
+    HIBYTE(CDC_CMD_PACKET_SZE),   /**/
+    0x10,                         /* bInterval: */
 
     /*---------------------------------------------------------------------------*/
 
@@ -137,22 +137,22 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     0x00,                          /* iInterface: */
 
     /*Endpoint OUT Descriptor*/
-    0x07,                              /* bLength: Endpoint Descriptor size */
-    USB_DESCRIPTOR_TYPE_ENDPOINT,      /* bDescriptorType: Endpoint */
-    0x01,                              /* bEndpointAddress */
-    0x02,                              /* bmAttributes: Bulk */
-    LOBYTE(CDC_DATA_PACKET_SZE),       /* wMaxPacketSize: */
-    HIBYTE(CDC_DATA_PACKET_SZE),       /**/
-    0x00,                              /* bInterval: ignore for Bulk transfer */
+    0x07,                         /* bLength: Endpoint Descriptor size */
+    USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType: Endpoint */
+    0x01,                         /* bEndpointAddress */
+    0x02,                         /* bmAttributes: Bulk */
+    LOBYTE(CDC_DATA_PACKET_SZE),  /* wMaxPacketSize: */
+    HIBYTE(CDC_DATA_PACKET_SZE),  /**/
+    0x00,                         /* bInterval: ignore for Bulk transfer */
 
     /*Endpoint IN Descriptor*/
-    0x07,                             /* bLength: Endpoint Descriptor size */
-    USB_DESCRIPTOR_TYPE_ENDPOINT,     /* bDescriptorType: Endpoint */
-    0x81,                             /* bEndpointAddress */
-    0x02,                             /* bmAttributes: Bulk */
-    LOBYTE(CDC_DATA_PACKET_SZE),      /* wMaxPacketSize: */
-    HIBYTE(CDC_DATA_PACKET_SZE),      /**/
-    0x00,                             /* bInterval */
+    0x07,                         /* bLength: Endpoint Descriptor size */
+    USB_DESCRIPTOR_TYPE_ENDPOINT, /* bDescriptorType: Endpoint */
+    0x81,                         /* bEndpointAddress */
+    0x02,                         /* bmAttributes: Bulk */
+    LOBYTE(CDC_DATA_PACKET_SZE),  /* wMaxPacketSize: */
+    HIBYTE(CDC_DATA_PACKET_SZE),  /**/
+    0x00,                         /* bInterval */
 };
 
 //

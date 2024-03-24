@@ -36,6 +36,7 @@ typedef struct {
         pthread_mutex_t ep_lock;
 } device_endpoint_data_t;
 
+static pthread_mutex_t receive_lock;
 static bool device_stopped = false;
 static device_endpoint_data_t endpoint_data[NUMBER_OF_ENDPOINTS];
 
@@ -52,6 +53,13 @@ void usbip_device_stop(void) {
     }
 }
 
+void usbip_device_receive(const usbip_device_t *usb_device, uint8_t ep, uint8_t *data,
+                          size_t data_length) {
+    pthread_mutex_lock(&receive_lock);
+    usb_device->ep_data_callback(ep, data, data_length);
+    pthread_mutex_unlock(&receive_lock);
+}
+
 void usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length) {
     uint8_t ep_masked = ep & 0xf;
     if (!device_stopped) {
@@ -61,6 +69,14 @@ void usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length) 
         endpoint_data[ep_masked].data_length = data_length;
         pthread_mutex_unlock(&ep_access_mutex);
     }
+}
+
+void usbip_device_critical_section_enter(void) {
+    pthread_mutex_lock(&receive_lock);
+}
+
+void usbip_device_critical_section_exit(void) {
+    pthread_mutex_unlock(&receive_lock);
 }
 
 uint8_t *usbip_device_get_ep_buffer(uint8_t ep, size_t *buffer_size) {
