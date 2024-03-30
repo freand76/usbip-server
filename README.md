@@ -13,7 +13,7 @@ device prototyping on a linux host.
 
 The code in **src/** is a C implementation of a C++ version I did back in 2016.
 
-The C++ version is still available in the **cpp/** folderc, but it will probably not be updated...
+The C++ version is still available in the **cpp_version** branch in the **cpp/** folderc, but it will probably not be updated...
 
 ## Requirements
 
