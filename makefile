@@ -1,4 +1,14 @@
 ###
+### VERBOSE
+###
+
+ifeq ($(V),)
+VERBOSE=@
+else
+VERBOSE=
+endif
+
+###
 ### OUTPUT FOLDERS
 ###
 
@@ -26,14 +36,14 @@ CFLAGS += -std=c99 \
 CFLAGS += -D_GNU_SOURCE
 
 $(BUILD_DIR):
-	@mkdir -p $(BUILD_DIR)
+	$(VERBOSE)mkdir -p $(BUILD_DIR)
 
 $(BUILD_LIB_DIR):
-	@mkdir -p $(BUILD_LIB_DIR)
+	$(VERBOSE)mkdir -p $(BUILD_LIB_DIR)
 
 $(BUILD_DIR)/%.o : %.c | $(BUILD_DIR)
 	@echo "  Compiling $(notdir $<)"
-	@$(COMPILE.c) $(CFLAGS-$@) -o $@ $<
+	$(VERBOSE)$(COMPILE.c) $(CFLAGS-$@) -o $@ $<
 
 
 ###
@@ -67,7 +77,7 @@ lib: $(LIBRARY_ARCHIVE)
 
 $(LIBRARY_ARCHIVE): $(LIBRARY_OBJECTS) | $(BUILD_LIB_DIR)
 	@echo "  Creating library $(notdir $@)"
-	@ar cr $@ $^
+	$(VERBOSE)ar cr $@ $^
 
 
 ###
@@ -87,7 +97,7 @@ USB_CDC_OBJECTS += $(LIBRARY_ARCHIVE)
 
 $(BUILD_DIR)/usb_cdc_device: $(USB_CDC_OBJECTS) | $(BUILD_DIR)
 	@echo "  Linking $(notdir $<) to $(notdir $@)"
-	@$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -o $@
+	$(VERBOSE)$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -o $@
 
 
 ###
@@ -107,7 +117,7 @@ USB_MOUSE_OBJECTS += $(LIBRARY_ARCHIVE)
 
 $(BUILD_DIR)/usb_mouse_device: $(USB_MOUSE_OBJECTS) | $(BUILD_DIR)
 	@echo "  Linking $(notdir $<) to $(notdir $@)"
-	@$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -lm -o $@
+	$(VERBOSE)$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -lm -o $@
 
 
 ###

@@ -30,6 +30,18 @@ The C++ version is still available in the **cpp_version** branch in the **cpp/**
 $ make
 ```
 
+Use the following command line for verbose output.
+
+```
+$ V=1 make
+```
+
+Clean build with
+
+```
+$ make clean
+```
+
 ## Start
 
 ### CDC Device (Will be available as a ttyACMx device under linux)
