@@ -20,7 +20,7 @@ BUILD_LIB_DIR=out/lib
 ### TARGETS
 ###
 
-TARGETS += $(BUILD_DIR)/usb_cdc_device $(BUILD_DIR)/usb_mouse_device
+TARGETS += $(BUILD_DIR)/usb_bulk_device $(BUILD_DIR)/usb_cdc_device $(BUILD_DIR)/usb_mouse_device
 
 all: $(TARGETS)
 
@@ -78,6 +78,26 @@ lib: $(LIBRARY_ARCHIVE)
 $(LIBRARY_ARCHIVE): $(LIBRARY_OBJECTS) | $(BUILD_LIB_DIR)
 	@echo "  Creating library $(notdir $@)"
 	$(VERBOSE)ar cr $@ $^
+
+
+###
+### BUILD USB_BULK DEVICE
+###
+
+vpath %.c src/usb_bulk
+
+CFLAGS += -I src/usb_bulk
+
+USB_BULK_SOURCES = \
+	usb_bulk_device.c
+
+USB_BULK_OBJECTS = $(addprefix $(BUILD_DIR)/, $(USB_BULK_SOURCES:.c=.o))
+USB_BULK_OBJECTS += $(LIBRARY_ARCHIVE)
+
+
+$(BUILD_DIR)/usb_bulk_device: $(USB_BULK_OBJECTS) | $(BUILD_DIR)
+	@echo "  Linking $(notdir $<) to $(notdir $@)"
+	$(VERBOSE)$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -o $@
 
 
 ###
