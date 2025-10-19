@@ -44,6 +44,13 @@ $ make clean
 
 ## Start
 
+
+### Bulk Device (Will respond to data sent to the device)
+
+```
+$ out/usb_bulk_device
+```
+
 ### CDC Device (Will be available as a ttyACMx device under linux)
 
 ```
@@ -54,6 +61,12 @@ $ out/usb_cdc_device
 
 ```
 $ out/usb_mouse_device
+```
+
+### Keyboard Device (Will type some text when connected)
+
+```
+$ out/usb_keyboard_device
 ```
 
 ## Attach Virtual Device

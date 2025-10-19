@@ -72,11 +72,12 @@ static const uint8_t usb_mouse_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 #define USB_HID_BCD 0x111
 
 static const uint8_t usb_mouse_configuration[USB_MOUSE_CONFIG_DESC_LENGTH] = {
-    0x09,                                       /* bLength: Configuration Descriptor size */
-    USB_DESCRIPTOR_TYPE_CONFIGURATION,          /* bDescriptorType: Configuration */
-    LOBYTE(USB_MOUSE_CONFIG_DESC_LENGTH),       /* wTotalLength: Bytes returned */
-    HIBYTE(USB_MOUSE_CONFIG_DESC_LENGTH), 0x01, /*bNumInterfaces: 1 interface*/
-    0x01,                                       /*bConfigurationValue: Configuration value*/
+    0x09,                                 /* bLength: Configuration Descriptor size */
+    USB_DESCRIPTOR_TYPE_CONFIGURATION,    /* bDescriptorType: Configuration */
+    LOBYTE(USB_MOUSE_CONFIG_DESC_LENGTH), /* wTotalLength: Bytes returned */
+    HIBYTE(USB_MOUSE_CONFIG_DESC_LENGTH), /**/
+    0x01,                                 /*bNumInterfaces: 1 interface*/
+    0x01,                                 /*bConfigurationValue: Configuration value*/
     0x00, /*iConfiguration: Index of string descriptor describing the configuration*/
     0xC0, /*bmAttributes: bus powered and Support Remote Wake-up */
     0x32, /*MaxPower 100 mA: this current is used for detecting Vbus*/

@@ -67,14 +67,15 @@ static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 #define CDC_DATA_PACKET_SZE 512 /* Data Endpoint Packet size */
 
 uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
-    0x09,                                     /* bLength: Configuration Descriptor size */
-    USB_DESCRIPTOR_TYPE_CONFIGURATION,        /* bDescriptorType */
-    LOBYTE(USB_CDC_CONFIG_DESC_LENGTH),       /* wTotalLength */
-    HIBYTE(USB_CDC_CONFIG_DESC_LENGTH), 0x02, /* bNumInterfaces: 2 interfaces */
-    0x01,                                     /* bConfigurationValue: */
-    0x04,                                     /* iConfiguration: */
-    0xC0,                                     /* bmAttributes: */
-    0x32,                                     /* MaxPower 100 mA */
+    0x09,                               /* bLength: Configuration Descriptor size */
+    USB_DESCRIPTOR_TYPE_CONFIGURATION,  /* bDescriptorType */
+    LOBYTE(USB_CDC_CONFIG_DESC_LENGTH), /* wTotalLength */
+    HIBYTE(USB_CDC_CONFIG_DESC_LENGTH), /**/
+    0x02,                               /* bNumInterfaces: 2 interfaces */
+    0x01,                               /* bConfigurationValue: */
+    0x04,                               /* iConfiguration: */
+    0xC0,                               /* bmAttributes: */
+    0x32,                               /* MaxPower 100 mA */
 
     /*Interface Descriptor */
     0x09,                          /* bLength: Interface Descriptor size */
