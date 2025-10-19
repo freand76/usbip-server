@@ -20,7 +20,11 @@ BUILD_LIB_DIR=out/lib
 ### TARGETS
 ###
 
-TARGETS += $(BUILD_DIR)/usb_bulk_device $(BUILD_DIR)/usb_cdc_device $(BUILD_DIR)/usb_mouse_device
+TARGETS += \
+	$(BUILD_DIR)/usb_bulk_device \
+	$(BUILD_DIR)/usb_cdc_device \
+	$(BUILD_DIR)/usb_keyboard_device \
+	$(BUILD_DIR)/usb_mouse_device
 
 all: $(TARGETS)
 
@@ -118,6 +122,26 @@ USB_CDC_OBJECTS += $(LIBRARY_ARCHIVE)
 $(BUILD_DIR)/usb_cdc_device: $(USB_CDC_OBJECTS) | $(BUILD_DIR)
 	@echo "  Linking $(notdir $<) to $(notdir $@)"
 	$(VERBOSE)$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -o $@
+
+
+###
+### BUILD USB_KEYBOARD DEVICE
+###
+
+vpath %.c src/usb_keyboard
+
+CFLAGS += -I src/usb_keyboard
+
+USB_KEYBOARD_SOURCES = \
+	usb_keyboard_device.c
+
+USB_KEYBOARD_OBJECTS = $(addprefix $(BUILD_DIR)/, $(USB_KEYBOARD_SOURCES:.c=.o))
+USB_KEYBOARD_OBJECTS += $(LIBRARY_ARCHIVE)
+
+
+$(BUILD_DIR)/usb_keyboard_device: $(USB_KEYBOARD_OBJECTS) | $(BUILD_DIR)
+	@echo "  Linking $(notdir $<) to $(notdir $@)"
+	$(VERBOSE)$(LINK.o) -Wl,--start-group $^ -Wl,--end-group -lm -o $@
 
 
 ###
