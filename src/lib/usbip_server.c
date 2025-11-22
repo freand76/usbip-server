@@ -28,9 +28,9 @@
 #define USBIP_PORT (3240)
 
 static const usbip_device_t *usbip_device = NULL;
+static pthread_t thread_id;
 
-static volatile int keep_running = 3;
-static volatile bool worker_stopped = true;
+static volatile sig_atomic_t keep_running = 3;
 
 static void int_handler(int unused) {
     (void)unused;
@@ -55,7 +55,6 @@ static void int_handler(int unused) {
 
 static void *usbip_server_worker_thread(void *arg) {
     (void)arg;
-    worker_stopped = false;
     while (keep_running > 0) {
         if (!tcpip_server_wait_for_client()) {
             continue;
@@ -76,7 +75,6 @@ static void *usbip_server_worker_thread(void *arg) {
     usbip_device_stop();
     printf("USBIPServer: Close Server\n");
     tcpip_server_close();
-    worker_stopped = true;
     return NULL;
 }
 
@@ -87,7 +85,6 @@ bool usbip_server_start(const usbip_device_t *usb_device) {
     usbip_device = usb_device;
 
     bool status = tcpip_server_open(USBIP_PORT);
-    pthread_t thread_id;
 
     if (status) {
         int err = pthread_create(&thread_id, NULL, &usbip_server_worker_thread, NULL);
@@ -103,10 +100,7 @@ void usbip_server_stop(void) {
     keep_running = 0;
     tcpip_server_stop();
     printf("\nUSBIPServer: Stopping...\n");
-    while (!worker_stopped) {
-        printf("USBIPServer: Waiting for server to stop...\n");
-        usleep(500000);
-    }
+    pthread_join(thread_id, NULL);
     printf("USBIPServer: Stopped\n");
 }
 
