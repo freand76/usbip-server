@@ -2,7 +2,7 @@
  usbip-server - a platform for USB device prototyping
 
  Fredrik Andersson
- Copyright 2024, All Rights Reserved.
+ Copyright 2024-2025, All Rights Reserved.
 
  This software may be used by anyone for any reason so
  long as the copyright notice in the source files
