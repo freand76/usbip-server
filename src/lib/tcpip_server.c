@@ -64,7 +64,7 @@ bool tcpip_server_open(int port) {
 }
 
 void tcpip_server_close(void) {
-    if (server_socket > 0) {
+    if (server_socket >= 0) {
         close(server_socket);
         server_socket = -1;
     }
@@ -75,7 +75,7 @@ void tcpip_server_stop(void) {
 }
 
 void tcpip_server_close_client(void) {
-    if (client_socket > 0) {
+    if (client_socket >= 0) {
         close(client_socket);
         client_socket = -1;
     }
@@ -109,10 +109,12 @@ bool tcpip_server_wait_for_client(void) {
 
 bool tcpip_server_read(void *buffer, size_t read_size) {
     size_t length = 0;
+    char *char_buffer = (char *)buffer;
     while (!stop_server && (length < read_size)) {
-        int res = read(client_socket, buffer, read_size);
+        int res = read(client_socket, &char_buffer[length], read_size - length);
         if ((res == -1) && (errno == EAGAIN)) {
             /* Timeout */
+            return false;
         } else if (res > 0) {
             length += res;
         } else {
@@ -124,10 +126,18 @@ bool tcpip_server_read(void *buffer, size_t read_size) {
 }
 
 bool tcpip_server_write(void *buffer, size_t write_size) {
-    int res = write(client_socket, buffer, write_size);
     size_t length = 0;
-    if (res > 0) {
-        length = res;
+    char *char_buffer = (char *)buffer;
+    while (!stop_server && (length < write_size)) {
+        int res = write(client_socket, &char_buffer[length], write_size - length);
+        if ((res == -1) && (errno == EAGAIN)) {
+            /* Timeout */
+            return false;
+        } else if (res > 0) {
+            length += res;
+        } else {
+            break;
+        }
     }
     return (length == write_size);
 }
