@@ -25,6 +25,11 @@
 #define OP_REQ_IMPORT 0x8003
 #define OP_REP_IMPORT 0x0003
 
+#define USBIP_CMD_SUBMIT 0x00000001
+#define USBIP_CMD_UNLINK 0x00000002
+#define USBIP_RET_SUBMIT 0x00000003
+#define USBIP_RET_UNLINK 0x00000004
+
 typedef struct {
         char path[256];
         char bus_id[32];
