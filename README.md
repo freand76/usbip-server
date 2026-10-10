@@ -43,8 +43,8 @@ flash-and-replug cycle for every change. Here the device is a normal process:
 - Learning USB: attach a device and watch enumeration, descriptors and transfers happen
   in the kernel log, `lsusb -v` or Wireshark.
 
-Four ready-to-run example devices are included: a bulk device, a CDC serial port, a
-mouse and a keyboard.
+Five ready-to-run example devices are included: a bulk device, a CDC serial port, a
+mouse, a keyboard and a microphone.
 
 ## How It Works
 
@@ -138,6 +138,7 @@ $ make check-python  # check formatting and lint of tools/ with ruff (needs uv)
 | `out/usb_cdc_device` | `fa00:0001` | CDC ACM serial port, shows up as `/dev/ttyACMx`. Sends `Tick <n>` twice a second while a terminal has the port open, and prints what you type. |
 | `out/usb_mouse_device` | `fa00:0002` | HID boot mouse that moves the pointer in a circle, one lap per second. |
 | `out/usb_keyboard_device` | `fa00:0003` | HID boot keyboard that types `Who is typing...` one second after the host has configured it. |
+| `out/usb_audio_input_device` | `fa00:0004` | USB Audio Class 1 microphone, 48 kHz 16 bit mono over an isochronous endpoint. While something records from it, it plays an alien pulse once a second: a warbling chirp sweeping from 220 Hz to 1760 Hz. |
 
 *The mouse moves your real pointer and the keyboard types into whichever window has
 focus.*
@@ -152,6 +153,22 @@ $ out/usb_bulk_device &
 $ sudo usbip attach -r localhost -b 1-1
 $ uv run tools/test_bulkio.py
 ```
+
+To hear the audio input device, attach it and record from it. It shows up as the ALSA
+card `Input` (check with `arecord -l`) and as the microphone "Virtual Audio Input" in the
+desktop sound settings:
+
+```
+$ out/usb_audio_input_device &
+$ sudo usbip attach -r localhost -b 1-1
+$ arecord -D plughw:CARD=Input -f S16_LE -r 48000 -c 1 -d 5 alien.wav
+$ aplay alien.wav
+```
+
+It is a class compliant device, so the Linux audio driver needs no special vendor or
+product id. When recording starts the kernel logs `usb usbN: Not yet implemented`: the
+virtual host controller does not implement frame numbers, which the audio driver asks
+for, and the message is harmless.
 
 ## Attaching and Detaching
 
