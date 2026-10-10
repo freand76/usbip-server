@@ -195,9 +195,9 @@ static bool device_request(const usbip_device_t *usb_device, uint8_t *setup, uin
     uint8_t bfDataDirection = bmRequestType & 0x80;
     if (bfDataDirection != 0) {
         if (bRequest == USB_REQUEST_GET_STATUS) {
-            uint8_t tx_buffer[2];
-            tx_buffer[0] = 0x00;
-            tx_buffer[1] = 0x01;
+            /* Bit 0 is self powered, remote wakeup (bit 1) can never be enabled */
+            uint8_t self_powered = (usb_device->config_desc[7] & 0x40) ? 0x01 : 0x00;
+            uint8_t tx_buffer[2] = {self_powered, 0x00};
             usbip_device_transmit(0, tx_buffer, sizeof(tx_buffer));
         } else if (bRequest == USB_REQUEST_GET_DESCRIPTOR) {
 
