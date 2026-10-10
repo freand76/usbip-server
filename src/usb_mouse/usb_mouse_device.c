@@ -69,9 +69,6 @@ int main(int argc, char *argv[]) {
     printf("USB Mouse Device Activated\n");
 
     while (!usbip_server_interrupted()) {
-        /* One report per polling interval, the host fetches reports as fast as they come */
-        usleep(USB_MOUSE_HID_POLL_INTERVAL_MS * 1000);
-
         float old_angle = (2 * M_PI * step_counter) / NUMBER_OF_STEPS;
         int16_t old_pos_x = CIRCLE_RADIUS * cos(old_angle);
         int16_t old_pos_y = CIRCLE_RADIUS * sin(old_angle);
