@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include <linux/usb/ch9.h>
 
@@ -31,6 +32,8 @@
 #define EP_STALL (-32)
 #define URB_UNLINKED (-104) /* -ECONNRESET */
 #define MAX_PENDING_URBS (32)
+#define NUMBER_OF_ENDPOINTS (16)
+#define WAIT_TIMEOUT_US (500000)
 
 typedef struct {
         uint32_t seqnum;
@@ -42,6 +45,11 @@ static bool device_imported = false;
 
 static pending_urb_t pending_urbs[MAX_PENDING_URBS];
 static size_t num_pending_urbs = 0;
+
+/* Interrupt IN endpoints complete at most one transfer per polling interval, like on a real bus */
+static uint64_t ep_interval_us[NUMBER_OF_ENDPOINTS];
+static uint64_t ep_next_poll_us[NUMBER_OF_ENDPOINTS];
+static uint64_t wait_timeout_us = WAIT_TIMEOUT_US;
 
 static uint8_t rx_buffer[USBIP_MAX_PACKET_SIZE];
 static uint8_t tx_buffer[USBIP_MAX_PACKET_SIZE];
@@ -58,6 +66,8 @@ static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, ui
                            uint32_t direction);
 static bool process_unlink(uint32_t seqnum);
 static bool complete_pending_urbs(void);
+static void load_interrupt_intervals(const uint8_t *config_desc);
+static uint64_t now_us(void);
 static void remove_pending_urb(size_t idx);
 static bool transmit_ret_submit(uint32_t seqnum, int32_t urb_status, size_t tx_length);
 
@@ -82,6 +92,7 @@ bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
             if (status) {
                 printf("USBIPProtocol: USBIP_CMD_REQ_DEV_IMPORT '%s'\n", busid_str);
                 num_pending_urbs = 0;
+                load_interrupt_intervals(usb_device->config_desc);
                 device_imported = transmit_import_response(usb_device);
             }
             break;
@@ -103,7 +114,7 @@ bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
 bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
     bool status = true;
 
-    if (tcpip_server_wait_for_data(usbip_device_get_event_fd())) {
+    if (tcpip_server_wait_for_data(usbip_device_get_event_fd(), wait_timeout_us)) {
         status = process_imported_cmd(usb_device);
     }
 
@@ -241,13 +252,25 @@ static bool process_unlink(uint32_t seqnum) {
 
 static bool complete_pending_urbs(void) {
     bool status = true;
+    uint64_t now = now_us();
     size_t idx = 0;
+    wait_timeout_us = WAIT_TIMEOUT_US;
     /* Oldest first, so data reaches the host in the order the transfers were queued */
     while (status && (idx < num_pending_urbs)) {
         pending_urb_t urb = pending_urbs[idx];
-        size_t tx_length =
-            usbip_device_fetch_ep_data(urb.ep, tx_buffer, urb.transfer_buffer_length);
+        uint8_t ep = urb.ep & USB_ENDPOINT_NUMBER_MASK;
+        size_t tx_length = 0;
+        if (now < ep_next_poll_us[ep]) {
+            /* Not polled yet, make sure to wake up when it is */
+            uint64_t time_left = ep_next_poll_us[ep] - now;
+            if (time_left < wait_timeout_us) {
+                wait_timeout_us = time_left;
+            }
+        } else {
+            tx_length = usbip_device_fetch_ep_data(urb.ep, tx_buffer, urb.transfer_buffer_length);
+        }
         if (tx_length > 0) {
+            ep_next_poll_us[ep] = now + ep_interval_us[ep];
             remove_pending_urb(idx);
             status = transmit_ret_submit(urb.seqnum, 0, tx_length);
         } else {
@@ -255,6 +278,31 @@ static bool complete_pending_urbs(void) {
         }
     }
     return status;
+}
+
+static void load_interrupt_intervals(const uint8_t *config_desc) {
+    size_t total_length = (config_desc[3] << 8) | config_desc[2];
+    memset(ep_interval_us, 0, sizeof(ep_interval_us));
+    memset(ep_next_poll_us, 0, sizeof(ep_next_poll_us));
+
+    size_t idx = 0;
+    while ((idx + USB_DT_ENDPOINT_SIZE <= total_length) && (config_desc[idx] > 0)) {
+        const uint8_t *desc = &config_desc[idx];
+        bool interrupt_in = (desc[1] == USB_DT_ENDPOINT) && ((desc[2] & USB_DIR_IN) != 0) &&
+                            ((desc[3] & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT);
+        if (interrupt_in && (desc[6] > 0)) {
+            /* The device is reported as high speed, interval is 2^(bInterval - 1) * 125 us */
+            uint8_t exponent = (desc[6] > 16) ? 16 : desc[6];
+            ep_interval_us[desc[2] & USB_ENDPOINT_NUMBER_MASK] = (uint64_t)125 << (exponent - 1);
+        }
+        idx += desc[0];
+    }
+}
+
+static uint64_t now_us(void) {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return ((uint64_t)now.tv_sec * 1000000) + ((uint64_t)now.tv_nsec / 1000);
 }
 
 static void remove_pending_urb(size_t idx) {

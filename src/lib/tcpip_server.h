@@ -17,14 +17,16 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 bool tcpip_server_open(int port);
 void tcpip_server_close(void);
 void tcpip_server_stop(void);
 void tcpip_server_close_client(void);
 bool tcpip_server_wait_for_client(void);
-/* Wait until the client has data or wake_fd is signalled, true if client data is available */
-bool tcpip_server_wait_for_data(int wake_fd);
+/* Wait until the client has data, wake_fd is signalled or the timeout expires, true if client
+   data is available */
+bool tcpip_server_wait_for_data(int wake_fd, uint64_t timeout_us);
 bool tcpip_server_read(void *buffer, size_t read_size);
 bool tcpip_server_write(void *buffer, size_t write_size);
 

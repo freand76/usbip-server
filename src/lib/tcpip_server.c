@@ -120,13 +120,17 @@ bool tcpip_server_wait_for_client(void) {
     return status;
 }
 
-bool tcpip_server_wait_for_data(int wake_fd) {
+bool tcpip_server_wait_for_data(int wake_fd, uint64_t timeout_us) {
     struct pollfd fds[2] = {
         {.fd = client_socket, .events = POLLIN},
         {.fd = wake_fd, .events = POLLIN},
     };
+    struct timespec timeout = {
+        .tv_sec = timeout_us / 1000000,
+        .tv_nsec = (timeout_us % 1000000) * 1000,
+    };
 
-    if (stop_server || (poll(fds, 2, READ_TIMEOUT_US / 1000) <= 0)) {
+    if (stop_server || (ppoll(fds, 2, &timeout, NULL) <= 0)) {
         return false;
     }
     /* Errors and hang-ups also count, the following read will report them */
