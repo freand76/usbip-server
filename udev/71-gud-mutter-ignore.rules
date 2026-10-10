@@ -1,0 +1,9 @@
+# Keep GNOME (mutter) away from GUD displays such as out/usb_gud_display_device.
+#
+# Mutter never forgets a display that was unplugged, so attaching the display again in
+# the same session makes GNOME Shell reject it or crash. With this rule GNOME does not
+# use the display at all, and it can be attached and detached freely.
+#
+# Install: sudo install -m 644 udev/71-gud-mutter-ignore.rules /etc/udev/rules.d/
+#          sudo udevadm control --reload-rules
+SUBSYSTEM=="drm", KERNEL=="card[0-9]*", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="614d", TAG+="mutter-device-ignore"

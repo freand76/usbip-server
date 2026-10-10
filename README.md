@@ -210,14 +210,14 @@ Resolution, pixel formats and buffer size are set at the top of
 
 *On GNOME, attaching the display again after it was detached crashes GNOME Shell:
 mutter never forgets a display that was unplugged. Either log out and in after
-detaching it, or keep GNOME away from GUD displays with a udev rule, installed before
+detaching it, or keep GNOME away from GUD displays with the udev rule in
+[udev/71-gud-mutter-ignore.rules](udev/71-gud-mutter-ignore.rules), installed before
 the display is attached for the first time in a session. The desktop then does not use
 the display, and it can be attached and detached freely:*
 
-`/etc/udev/rules.d/71-gud-mutter-ignore.rules`
-
 ```
-SUBSYSTEM=="drm", KERNEL=="card[0-9]*", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="614d", TAG+="mutter-device-ignore"
+$ sudo install -m 644 udev/71-gud-mutter-ignore.rules /etc/udev/rules.d/
+$ sudo udevadm control --reload-rules
 ```
 
 ## Attaching and Detaching
