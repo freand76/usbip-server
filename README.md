@@ -165,6 +165,21 @@ $ arecord -D plughw:CARD=Input -f S16_LE -r 48000 -c 1 -d 5 alien.wav
 $ aplay alien.wav
 ```
 
+Or play it live on the speakers with [tools/audio_loopback.py](tools/audio_loopback.py),
+which works with both PulseAudio and PipeWire. Start it before or after attaching the
+device; it plays the input until Ctrl-C, stops when the device is detached and starts
+again when it is attached:
+
+```
+$ tools/audio_loopback.py
+$ tools/audio_loopback.py --list                     # inputs and outputs
+$ tools/audio_loopback.py --source Mic1 --sink Speaker --latency-ms 50
+```
+
+The default latency is 30 ms. Much lower latencies make the sound break up: the audio
+arrives in 1 ms packets with some USB/IP delay on top, and the sound server runs out of
+samples between them.
+
 It is a class compliant device, so the Linux audio driver needs no special vendor or
 product id. When recording starts the kernel logs `usb usbN: Not yet implemented`: the
 virtual host controller does not implement frame numbers, which the audio driver asks
