@@ -36,6 +36,12 @@
 #define WAIT_TIMEOUT_US (500000)
 
 typedef struct {
+        uint8_t type;          /* USB_ENDPOINT_XFER_* from the endpoint descriptor */
+        uint64_t interval_us;  /* Service interval of interrupt IN endpoints */
+        uint64_t next_poll_us; /* Interrupt IN: when the next transfer may complete */
+} endpoint_t;
+
+typedef struct {
         uint32_t seqnum;
         uint32_t ep;
         uint32_t transfer_buffer_length;
@@ -46,9 +52,9 @@ static bool device_imported = false;
 static pending_urb_t pending_urbs[MAX_PENDING_URBS];
 static size_t num_pending_urbs = 0;
 
-/* Interrupt IN endpoints complete at most one transfer per polling interval, like on a real bus */
-static uint64_t ep_interval_us[NUMBER_OF_ENDPOINTS];
-static uint64_t ep_next_poll_us[NUMBER_OF_ENDPOINTS];
+/* Indexed by direction (0 = OUT, 1 = IN) and endpoint number, interrupt IN endpoints complete at
+   most one transfer per polling interval, like on a real bus */
+static endpoint_t endpoints[2][NUMBER_OF_ENDPOINTS];
 static uint64_t wait_timeout_us = WAIT_TIMEOUT_US;
 
 static uint8_t rx_buffer[USBIP_MAX_PACKET_SIZE];
@@ -66,7 +72,7 @@ static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, ui
                            uint32_t direction);
 static bool process_unlink(uint32_t seqnum);
 static bool complete_pending_urbs(void);
-static void load_interrupt_intervals(const uint8_t *config_desc);
+static void load_endpoints(const uint8_t *config_desc);
 static uint64_t now_us(void);
 static void remove_pending_urb(size_t idx);
 static bool transmit_ret_submit(uint32_t seqnum, int32_t urb_status, size_t actual_length,
@@ -97,7 +103,7 @@ bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
                 /* A new host starts with a freshly reset device */
                 num_pending_urbs = 0;
                 wait_timeout_us = WAIT_TIMEOUT_US;
-                load_interrupt_intervals(usb_device->config_desc);
+                load_endpoints(usb_device->config_desc);
                 usbip_device_reset(usb_device);
                 device_imported = transmit_import_response(usb_device);
             }
@@ -269,11 +275,11 @@ static bool complete_pending_urbs(void) {
     /* Oldest first, so data reaches the host in the order the transfers were queued */
     while (status && (idx < num_pending_urbs)) {
         pending_urb_t urb = pending_urbs[idx];
-        uint8_t ep = urb.ep & USB_ENDPOINT_NUMBER_MASK;
+        endpoint_t *endpoint = &endpoints[1][urb.ep & USB_ENDPOINT_NUMBER_MASK];
         size_t tx_length = 0;
-        if (now < ep_next_poll_us[ep]) {
+        if (now < endpoint->next_poll_us) {
             /* Not polled yet, make sure to wake up when it is */
-            uint64_t time_left = ep_next_poll_us[ep] - now;
+            uint64_t time_left = endpoint->next_poll_us - now;
             if (time_left < wait_timeout_us) {
                 wait_timeout_us = time_left;
             }
@@ -281,7 +287,7 @@ static bool complete_pending_urbs(void) {
             tx_length = usbip_device_fetch_ep_data(urb.ep, tx_buffer, urb.transfer_buffer_length);
         }
         if (tx_length > 0) {
-            ep_next_poll_us[ep] = now + ep_interval_us[ep];
+            endpoint->next_poll_us = now + endpoint->interval_us;
             remove_pending_urb(idx);
             status = transmit_ret_submit(urb.seqnum, 0, tx_length, true);
         } else {
@@ -291,20 +297,22 @@ static bool complete_pending_urbs(void) {
     return status;
 }
 
-static void load_interrupt_intervals(const uint8_t *config_desc) {
+static void load_endpoints(const uint8_t *config_desc) {
     size_t total_length = (config_desc[3] << 8) | config_desc[2];
-    memset(ep_interval_us, 0, sizeof(ep_interval_us));
-    memset(ep_next_poll_us, 0, sizeof(ep_next_poll_us));
+    memset(endpoints, 0, sizeof(endpoints));
 
     size_t idx = 0;
     while ((idx + USB_DT_ENDPOINT_SIZE <= total_length) && (config_desc[idx] > 0)) {
         const uint8_t *desc = &config_desc[idx];
-        bool interrupt_in = (desc[1] == USB_DT_ENDPOINT) && ((desc[2] & USB_DIR_IN) != 0) &&
-                            ((desc[3] & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT);
-        if (interrupt_in && (desc[6] > 0)) {
-            /* The device is reported as high speed, interval is 2^(bInterval - 1) * 125 us */
-            uint8_t exponent = (desc[6] > 16) ? 16 : desc[6];
-            ep_interval_us[desc[2] & USB_ENDPOINT_NUMBER_MASK] = (uint64_t)125 << (exponent - 1);
+        if (desc[1] == USB_DT_ENDPOINT) {
+            bool in = ((desc[2] & USB_DIR_IN) != 0);
+            endpoint_t *endpoint = &endpoints[in ? 1 : 0][desc[2] & USB_ENDPOINT_NUMBER_MASK];
+            endpoint->type = desc[3] & USB_ENDPOINT_XFERTYPE_MASK;
+            if (in && (endpoint->type == USB_ENDPOINT_XFER_INT) && (desc[6] > 0)) {
+                /* The device is reported as high speed, interval is 2^(bInterval - 1) * 125 us */
+                uint8_t exponent = (desc[6] > 16) ? 16 : desc[6];
+                endpoint->interval_us = (uint64_t)125 << (exponent - 1);
+            }
         }
         idx += desc[0];
     }
