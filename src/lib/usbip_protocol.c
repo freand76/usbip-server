@@ -90,7 +90,9 @@ bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
         case OP_REQ_IMPORT:
             status = tcpip_server_read(busid_str, sizeof(busid_str));
             if (status) {
-                printf("USBIPProtocol: USBIP_CMD_REQ_DEV_IMPORT '%s'\n", busid_str);
+                /* The client is not required to NUL terminate the bus id */
+                printf("USBIPProtocol: USBIP_CMD_REQ_DEV_IMPORT '%.*s'\n", (int)sizeof(busid_str),
+                       busid_str);
                 num_pending_urbs = 0;
                 load_interrupt_intervals(usb_device->config_desc);
                 device_imported = transmit_import_response(usb_device);
