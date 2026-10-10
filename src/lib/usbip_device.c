@@ -27,6 +27,8 @@ pthread_mutex_t ep_access_mutex;
 #define NUMBER_OF_ENDPOINTS (16)
 #define ENDPOINT_MAX_DATA_LENGTH (512)
 
+#define USB_REQUEST_TYPE_STANDARD (0)
+
 #define USB_REQUEST_RECIPIENT_DEVICE (0)
 #define USB_REQUEST_RECIPIENT_INTERFACE (1)
 
@@ -117,10 +119,11 @@ void usbip_device_consume_buffer(uint8_t ep, size_t length) {
 void usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
                           size_t length) {
     uint8_t bmRequestType = setup[0];
-    uint8_t bfRecipient = bmRequestType & 0x05;
+    uint8_t bfType = (bmRequestType >> 5) & 0x03;
+    uint8_t bfRecipient = bmRequestType & 0x1f;
 
-    if (bmRequestType & 0x20) {
-        /* Vendor */
+    if (bfType != USB_REQUEST_TYPE_STANDARD) {
+        /* Class or Vendor */
         usb_device->control_data_callback(setup, buffer, length);
     } else if (bfRecipient == USB_REQUEST_RECIPIENT_DEVICE) {
         device_request(usb_device, setup, buffer, length);
