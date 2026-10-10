@@ -146,6 +146,35 @@ $(BUILD_DIR)/usb_cdc_device: $(USB_CDC_OBJECTS) | $(BUILD_DIR)
 
 
 ###
+### BUILD USB_GUD_DISPLAY DEVICE, NOT PART OF ALL SINCE IT NEEDS SDL3 (libsdl3-dev)
+###
+
+vpath %.c src/usb_gud_display
+
+CFLAGS += -I src/usb_gud_display
+
+USB_GUD_DISPLAY_SOURCES = \
+	usb_gud_display_device.c \
+	gud_display_window.c
+
+USB_GUD_DISPLAY_OBJECTS = $(addprefix $(BUILD_DIR)/, $(USB_GUD_DISPLAY_SOURCES:.c=.o))
+USB_GUD_DISPLAY_OBJECTS += $(LIBRARY_ARCHIVE)
+
+CFLAGS-$(BUILD_DIR)/gud_display_window.o = $(shell pkg-config --cflags sdl3)
+
+$(BUILD_DIR)/gud_display_window.o: | sdl3_check
+
+sdl3_check:
+	@pkg-config --exists sdl3 || { echo "The GUD display needs SDL3, install libsdl3-dev"; exit 1; }
+
+gud_display: $(BUILD_DIR)/usb_gud_display_device
+
+$(BUILD_DIR)/usb_gud_display_device: $(USB_GUD_DISPLAY_OBJECTS) | $(BUILD_DIR)
+	@echo "  Linking $(notdir $<) to $(notdir $@)"
+	$(VERBOSE)$(LINK.o) -Wl,--start-group $^ -Wl,--end-group $(shell pkg-config --libs sdl3) -o $@
+
+
+###
 ### BUILD USB_KEYBOARD DEVICE
 ###
 

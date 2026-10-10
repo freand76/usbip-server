@@ -43,8 +43,8 @@ flash-and-replug cycle for every change. Here the device is a normal process:
 - Learning USB: attach a device and watch enumeration, descriptors and transfers happen
   in the kernel log, `lsusb -v` or Wireshark.
 
-Five ready-to-run example devices are included: a bulk device, a CDC serial port, a
-mouse, a keyboard and a microphone.
+Six ready-to-run example devices are included: a bulk device, a CDC serial port, a
+mouse, a keyboard, a microphone and a display.
 
 ## How It Works
 
@@ -127,6 +127,7 @@ $ make            # builds all examples into out/
 $ V=1 make        # show the full compiler command lines
 $ make clean      # remove out/
 $ make format     # format the sources with clang-format
+$ make gud_display   # the GUD display example, needs SDL3 (libsdl3-dev)
 $ make check-python  # check formatting and lint of tools/ with ruff (needs uv)
 ```
 
@@ -139,6 +140,7 @@ $ make check-python  # check formatting and lint of tools/ with ruff (needs uv)
 | `out/usb_mouse_device` | `fa00:0002` | HID boot mouse that moves the pointer in a circle, one lap per second. |
 | `out/usb_keyboard_device` | `fa00:0003` | HID boot keyboard that types `Who is typing...` one second after the host has configured it. |
 | `out/usb_audio_input_device` | `fa00:0004` | USB Audio Class 1 microphone, 48 kHz 16 bit mono over an isochronous endpoint. While something records from it, it plays an alien pulse once a second: a warbling chirp sweeping from 220 Hz to 1760 Hz. |
+| `out/usb_gud_display_device` | `1d50:614d` | 320x240 RGB565 display using the [GUD (Generic USB Display)](https://github.com/notro/gud/wiki) protocol, shows up as a monitor. A window shows what the host draws on it. |
 
 *The mouse moves your real pointer and the keyboard types into whichever window has
 focus.*
@@ -184,6 +186,37 @@ It is a class compliant device, so the Linux audio driver needs no special vendo
 product id. When recording starts the kernel logs `usb usbN: Not yet implemented`: the
 virtual host controller does not implement frame numbers, which the audio driver asks
 for, and the message is harmless.
+
+The display device is built separately with `make gud_display`, since its window needs
+SDL3 (`sudo apt install libsdl3-dev`). On the host it needs the `gud` kernel module, part
+of Linux since 5.13. The driver only binds to a few fixed ids, so the device uses the
+original GUD vendor and product id instead of `fa00`. Once attached it is a real
+monitor: the desktop may extend onto it, it appears under `/sys/class/drm`, and the
+device's window shows what is drawn on it. Without a desktop the device runs without a
+window. `modetest` (`sudo apt install libdrm-tests`) draws a test pattern on it:
+
+```
+$ make gud_display
+$ out/usb_gud_display_device &
+$ sudo usbip attach -r localhost -b 1-1
+$ modetest -M gud -c                            # find the connector id, for example 38
+$ modetest -M gud -s 38:320x240@RG16            # test pattern until Enter is pressed
+```
+
+Resolution, pixel formats and buffer size are set at the top of
+[usb_gud_display_descriptors.h](src/usb_gud_display/usb_gud_display_descriptors.h).
+
+*On GNOME, attaching the display again after it was detached crashes GNOME Shell:
+mutter never forgets a display that was unplugged. Either log out and in after
+detaching it, or keep GNOME away from GUD displays with a udev rule, installed before
+the display is attached for the first time in a session. The desktop then does not use
+the display, and it can be attached and detached freely:*
+
+`/etc/udev/rules.d/71-gud-mutter-ignore.rules`
+
+```
+SUBSYSTEM=="drm", KERNEL=="card[0-9]*", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="614d", TAG+="mutter-device-ignore"
+```
 
 ## Attaching and Detaching
 
@@ -245,8 +278,9 @@ Reboot, or log in again and reload the module, for the changes to take effect.
 
 Programs that talk to a USB device directly, like `tools/test_bulkio.py` through
 `pyusb` or any other libusb application, open its node under `/dev/bus/usb`. By default
-only root may write to it. All example devices use vendor id `fa00`, so one udev rule
-gives access to all of them:
+only root may write to it. All example devices except the display use vendor id `fa00`,
+so one udev rule gives access to all of them (the display is used by a kernel driver and
+needs no rule):
 
 `/etc/udev/rules.d/70-usbip-server.rules`
 
