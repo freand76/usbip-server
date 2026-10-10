@@ -72,7 +72,7 @@ bool usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length);
 /**
  * @brief Enter critical section
  *
- * No USB device endpoint data will occur while in critical region
+ * No device callbacks (control, endpoint data or reset) will run while in critical region
  */
 void usbip_device_critical_section_enter(void);
 

@@ -61,6 +61,8 @@ static const char *get_string(const usbip_device_t *usb_device, uint8_t index);
 static bool device_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
                            size_t req_size);
 static bool endpoint_request(uint8_t *usb_setup);
+static void control_callback(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
+                             size_t length);
 static size_t build_other_speed_config(const uint8_t *config_desc, uint8_t *buffer,
                                        size_t buffer_length);
 static void interface_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
@@ -203,7 +205,7 @@ bool usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint
     bool supported = true;
     if (bfType != USB_REQUEST_TYPE_STANDARD) {
         /* Class or Vendor */
-        usb_device->control_data_callback(setup, buffer, length);
+        control_callback(usb_device, setup, buffer, length);
     } else if (bfRecipient == USB_REQUEST_RECIPIENT_DEVICE) {
         supported = device_request(usb_device, setup, buffer, length);
     } else if (bfRecipient == USB_REQUEST_RECIPIENT_INTERFACE) {
@@ -387,5 +389,13 @@ static bool endpoint_request(uint8_t *setup) {
 static void interface_request(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
                               size_t req_size) {
     /* Let device handle interface requests */
-    usb_device->control_data_callback(setup, buffer, req_size);
+    control_callback(usb_device, setup, buffer, req_size);
+}
+
+static void control_callback(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
+                             size_t length) {
+    /* Device callbacks never run while the device is in a critical section */
+    pthread_mutex_lock(&receive_lock);
+    usb_device->control_data_callback(setup, buffer, length);
+    pthread_mutex_unlock(&receive_lock);
 }
