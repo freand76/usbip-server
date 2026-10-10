@@ -192,7 +192,9 @@ SDL3 (`sudo apt install libsdl3-dev`). On the host it needs the `gud` kernel mod
 of Linux since 5.13. The driver only binds to a few fixed ids, so the device uses the
 original GUD vendor and product id instead of `fa00`. Once attached it is a real
 monitor: the desktop may extend onto it, it appears under `/sys/class/drm`, and the
-device's window shows what is drawn on it. Without a desktop the device runs without a
+device's window shows what is drawn on it. The display reports its connector as
+connected a few seconds after attaching, the way a monitor powers up, so the desktop
+picks it up about 10 seconds after the attach. Without a desktop the device runs without a
 window. `modetest` (`sudo apt install libdrm-tests`) draws a test pattern on it:
 
 ```

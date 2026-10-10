@@ -30,6 +30,7 @@
 
 #define MAX_BYTES_PER_PIXEL (4)
 #define WINDOW_FRAME_INTERVAL_MS (20)
+#define CONNECTOR_CONNECT_DELAY_MS (5000)
 
 typedef struct {
         bool active;
@@ -40,6 +41,7 @@ typedef struct {
 
 // Only used from device callbacks, which never run at the same time
 static uint8_t last_status = GUD_STATUS_OK;
+static uint64_t attached_ms = 0;
 static bool state_checked = false;
 static gud_state_req_t checked_state;
 static uint8_t current_format = 0;
@@ -55,6 +57,12 @@ static uint32_t stats_updates = 0;
 static uint32_t stats_bytes = 0;
 static uint32_t stats_errors = 0;
 static gud_set_buffer_req_t stats_last_rect;
+
+static uint64_t now_ms(void) {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return ((uint64_t)now.tv_sec * 1000) + ((uint64_t)now.tv_nsec / 1000000);
+}
 
 static bool is_offered_format(uint8_t format) {
     for (size_t idx = 0; idx < sizeof(display_formats); idx++) {
@@ -130,7 +138,8 @@ static void get_request(uint8_t bRequest, uint16_t wValue) {
     case GUD_REQ_GET_CONNECTORS: {
         gud_connector_descriptor_req_t connector = {
             .connector_type = GUD_CONNECTOR_TYPE_PANEL,
-            .flags = 0,
+            /* The host polls the status every 10 seconds, see GUD_REQ_GET_CONNECTOR_STATUS */
+            .flags = GUD_CONNECTOR_FLAGS_POLL_STATUS,
         };
         answer(&connector, sizeof(connector));
         return;
@@ -150,7 +159,14 @@ static void get_request(uint8_t bRequest, uint16_t wValue) {
         answer(NULL, 0);
         return;
     case GUD_REQ_GET_CONNECTOR_STATUS: {
-        uint8_t status = GUD_CONNECTOR_STATUS_CONNECTED;
+        /*
+         * A desktop like GNOME only picks up the connector of a hotplugged display when it
+         * changes, and it misses the change while the display is being set up. Reporting the
+         * connector as connected a while after attaching gives it a change it sees.
+         */
+        uint8_t status = (now_ms() - attached_ms >= CONNECTOR_CONNECT_DELAY_MS)
+                             ? GUD_CONNECTOR_STATUS_CONNECTED
+                             : GUD_CONNECTOR_STATUS_DISCONNECTED;
         answer(&status, sizeof(status));
         return;
     }
@@ -396,6 +412,7 @@ static void framebuffer_to_xrgb8888(const uint8_t *fb, uint8_t format, uint32_t 
 }
 
 static void reset(void) {
+    attached_ms = now_ms();
     last_status = GUD_STATUS_OK;
     state_checked = false;
     current_format = 0;
@@ -415,12 +432,6 @@ static const usbip_device_t gud_display_device = {
     .ep_data_callback = endpoint_data,
     .reset_callback = reset,
 };
-
-static uint64_t now_ms(void) {
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    return ((uint64_t)now.tv_sec * 1000) + ((uint64_t)now.tv_nsec / 1000000);
-}
 
 int main(int argc, char *argv[]) {
     (void)argc;
