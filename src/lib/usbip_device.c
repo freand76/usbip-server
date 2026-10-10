@@ -211,6 +211,26 @@ static bool device_request(const usbip_device_t *usb_device, uint8_t *setup, uin
                 size_t desc_length = (usb_device->config_desc[3] << 8) | usb_device->config_desc[2];
                 size_t tx_length = (req_size < desc_length) ? req_size : desc_length;
                 usbip_device_transmit(0, usb_device->config_desc, tx_length);
+            } else if ((bDescriptorType == USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER) &&
+                       (usb_device->device_desc[3] >= 0x02)) {
+                /* Only USB 2.0 devices have a qualifier, the other speed uses the same
+                   device descriptor values */
+                const uint8_t *device_desc = usb_device->device_desc;
+                uint8_t qualifier_desc[10] = {
+                    sizeof(qualifier_desc),
+                    USB_DESCRIPTOR_TYPE_DEVICE_QUALIFIER,
+                    device_desc[2], // bcdUSB
+                    device_desc[3],
+                    device_desc[4],  // bDeviceClass
+                    device_desc[5],  // bDeviceSubClass
+                    device_desc[6],  // bDeviceProtocol
+                    device_desc[7],  // bMaxPacketSize0
+                    device_desc[17], // bNumConfigurations
+                    0,               // bReserved
+                };
+                size_t tx_length =
+                    (req_size < sizeof(qualifier_desc)) ? req_size : sizeof(qualifier_desc);
+                usbip_device_transmit(0, qualifier_desc, tx_length);
             } else if (bDescriptorType == USB_DESCRIPTOR_TYPE_STRING) {
                 if (bDescriptorIndex == 0) {
                     size_t tx_length = (req_size < usb_device->langid_desc[0])
