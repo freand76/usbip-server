@@ -82,6 +82,14 @@ static void endpoint_data(uint8_t ep, const uint8_t *data, size_t data_length) {
     }
 }
 
+static void reset(void) {
+    /* A new or departed host has no terminal open */
+    cdc_state.DTR = false;
+    cdc_state.RTS = false;
+    input_buffer_pos = 0;
+    printf("USB Reset\n");
+}
+
 static const usbip_device_t cdc_device = {
     .device_desc = usb_device_descriptor,
     .config_desc = cdc_config_descriptor,
@@ -89,6 +97,7 @@ static const usbip_device_t cdc_device = {
     .usb_strings = usb_strings,
     .control_data_callback = control_data,
     .ep_data_callback = endpoint_data,
+    .reset_callback = reset,
 };
 
 int main(int argc, char *argv[]) {
