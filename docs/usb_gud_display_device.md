@@ -64,6 +64,14 @@ $ ffmpeg -re -f lavfi -i testsrc2=size=320x240:rate=15 -pix_fmt rgb565le -f fbde
 $ ffmpeg -re -f lavfi -i mandelbrot=size=320x240:rate=15 -pix_fmt rgb565le -f fbdev /dev/fb1
 ```
 
+[tools/fb_animation.py](../tools/fb_animation.py) switches the framebuffer on itself and
+draws animated demo effects, a plasma, a tunnel flight and fire, in turn until Ctrl-C:
+
+```
+$ uv run tools/fb_animation.py
+$ uv run tools/fb_animation.py --effect tunnel --fps 20
+```
+
 The framebuffer only shows while no other program, like `modetest` or the desktop,
 drives the display.
 
