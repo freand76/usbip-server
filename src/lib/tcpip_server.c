@@ -109,6 +109,8 @@ bool tcpip_server_wait_for_client(void) {
     if (status) {
         tv.tv_usec = READ_TIMEOUT_US;
         setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof tv);
+        /* Replies are written in parts, don't let Nagle hold them back waiting for an ACK */
+        setsockopt(client_socket, IPPROTO_TCP, TCP_NODELAY, &(int){1}, sizeof(int));
         setsockopt(client_socket, SOL_SOCKET, SO_KEEPALIVE, &(int){1}, sizeof(int));
         setsockopt(client_socket, IPPROTO_TCP, TCP_KEEPIDLE, &(int){KEEPALIVE_IDLE_S}, sizeof(int));
         setsockopt(client_socket, IPPROTO_TCP, TCP_KEEPINTVL, &(int){KEEPALIVE_INTERVAL_S},
