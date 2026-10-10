@@ -66,7 +66,8 @@ static const uint8_t usb_keyboard_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 #define HID_KEYBOARD_REPORT_DESC_LENGTH (63)
 
 #define USB_KEYBOARD_HID_EP_DATA_IN (0x81)
-#define USB_KEYBOARD_HID_POLL_INTERVAL_MS (10)
+/* High speed polling interval is 2^(bInterval - 1) * 125 us, 2^6 * 125 us = 8 ms */
+#define USB_KEYBOARD_HID_POLL_INTERVAL (7)
 
 #define USB_HID_BCD 0x111
 
@@ -102,13 +103,13 @@ static const uint8_t usb_keyboard_configuration[USB_KEYBOARD_CONFIG_DESC_LENGTH]
     LOBYTE(HID_KEYBOARD_REPORT_DESC_LENGTH), /*wItemLength: Total length of Report descriptor*/
     HIBYTE(HID_KEYBOARD_REPORT_DESC_LENGTH), /**/
     /******************** Descriptor of Keyboard endpoint ********************/
-    0x07,                              /*bLength: Endpoint Descriptor size*/
-    USB_DESCRIPTOR_TYPE_ENDPOINT,      /*bDescriptorType:*/
-    USB_KEYBOARD_HID_EP_DATA_IN,       /*bEndpointAddress: Endpoint Address (IN)*/
-    0x03,                              /*bmAttributes: Interrupt endpoint*/
-    0x08,                              /*wMaxPacketSize: 8 Byte max */
-    0x00,                              /**/
-    USB_KEYBOARD_HID_POLL_INTERVAL_MS, /*bInterval: Polling Interval (10 ms)*/
+    0x07,                           /*bLength: Endpoint Descriptor size*/
+    USB_DESCRIPTOR_TYPE_ENDPOINT,   /*bDescriptorType:*/
+    USB_KEYBOARD_HID_EP_DATA_IN,    /*bEndpointAddress: Endpoint Address (IN)*/
+    0x03,                           /*bmAttributes: Interrupt endpoint*/
+    0x08,                           /*wMaxPacketSize: 8 Byte max */
+    0x00,                           /**/
+    USB_KEYBOARD_HID_POLL_INTERVAL, /*bInterval: Polling Interval (8 ms)*/
 };
 
 //

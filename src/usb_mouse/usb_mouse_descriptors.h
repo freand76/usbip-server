@@ -66,8 +66,9 @@ static const uint8_t usb_mouse_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 #define HID_MOUSE_REPORT_DESC_LENGTH (50)
 
 #define USB_MOUSE_HID_EP_DATA_IN (0x81)
-#define USB_MOUSE_HID_POLL_INTERVAL_MS (20)
-#define USB_MOUSE_HID_POLL_INTERVAL (1000 * USB_MOUSE_HID_POLL_INTERVAL_MS / 125)
+#define USB_MOUSE_HID_POLL_INTERVAL_MS (16)
+/* High speed polling interval is 2^(bInterval - 1) * 125 us, 2^7 * 125 us = 16 ms */
+#define USB_MOUSE_HID_POLL_INTERVAL (8)
 
 #define USB_HID_BCD 0x111
 
@@ -109,7 +110,7 @@ static const uint8_t usb_mouse_configuration[USB_MOUSE_CONFIG_DESC_LENGTH] = {
     0x03,                         /*bmAttributes: Interrupt endpoint*/
     0x04,                         /*wMaxPacketSize: 4 Byte max */
     0x00,                         /**/
-    USB_MOUSE_HID_POLL_INTERVAL,  /*bInterval: Polling Interval (10 ms)*/
+    USB_MOUSE_HID_POLL_INTERVAL,  /*bInterval: Polling Interval (16 ms)*/
 };
 
 //

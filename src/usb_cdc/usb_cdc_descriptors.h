@@ -122,7 +122,7 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     0x03,                         /* bmAttributes: Interrupt */
     LOBYTE(CDC_CMD_PACKET_SZE),   /* wMaxPacketSize: */
     HIBYTE(CDC_CMD_PACKET_SZE),   /**/
-    0x10,                         /* bInterval: */
+    0x08,                         /* bInterval: 2^(8 - 1) * 125 us = 16 ms */
 
     /*---------------------------------------------------------------------------*/
 
