@@ -7,7 +7,7 @@ answers each batch with `Message Counter: <n>`.
 | | |
 |---|---|
 | Program | `out/usb_bulk_device` |
-| Source | [src/usb_bulk/](../src/usb_bulk/) |
+| Source | [src/usb_bulk/](https://github.com/freand76/usbip-server/tree/main/src/usb_bulk) |
 | USB id | `fa00:c001` |
 | Interface | class `0xff` (vendor specific), no kernel driver binds to it |
 | Endpoints | `0x01` bulk OUT, `0x81` bulk IN, 512 byte packets |
@@ -15,7 +15,7 @@ answers each batch with `Message Counter: <n>`.
 ## Try It
 
 Build, start the device and attach it, see Attaching and Detaching in the
-[README](../README.md):
+[README](https://github.com/freand76/usbip-server/blob/main/README.md):
 
 ```
 $ make
@@ -26,7 +26,7 @@ Bus 005 Device 007: ID fa00:c001 Virtual UsbIP Virtual Bulk Device
 ```
 
 No kernel driver claims the device, so a program talks to it directly through libusb.
-[tools/test_bulkio.py](../tools/test_bulkio.py) does that with
+[tools/test_bulkio.py](https://github.com/freand76/usbip-server/blob/main/tools/test_bulkio.py) does that with
 [uv](https://docs.astral.sh/uv/), which installs its Python dependencies by itself:
 
 ```
@@ -36,7 +36,7 @@ RX: 'Message Counter: 1'
 
 The script sends five `Hello World <n>, ` messages, then prints what the device answers
 until it has been quiet for two seconds. It needs access to the device node, see
-Accessing the Devices Without root in the [README](../README.md).
+Accessing the Devices Without root in the [README](https://github.com/freand76/usbip-server/blob/main/README.md).
 
 Detach with `sudo usbip detach -p 0`.
 
@@ -70,11 +70,11 @@ Input: Hello World 0, Hello World 1, Hello World 2, Hello World 3, Hello World 4
 
 This is the starting point for any device that a host program drives over libusb: a
 measurement device, a firmware updater, a custom protocol. Change the descriptors in
-[usb_bulk_descriptors.h](../src/usb_bulk/usb_bulk_descriptors.h), replace the echo logic
+[usb_bulk_descriptors.h](https://github.com/freand76/usbip-server/blob/main/src/usb_bulk/usb_bulk_descriptors.h), replace the echo logic
 in the main loop, and handle vendor control requests in `control_data()`.
 
 ## Troubleshooting
 
 - `uv run tools/test_bulkio.py` fails with "Access denied": install the udev rule from
-  Accessing the Devices Without root in the [README](../README.md) and attach again.
+  Accessing the Devices Without root in the [README](https://github.com/freand76/usbip-server/blob/main/README.md) and attach again.
 - `ValueError: Device not found`: the device is not attached, check `usbip port`.

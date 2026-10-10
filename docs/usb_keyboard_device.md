@@ -7,7 +7,7 @@ desktop like any keyboard: one second after the host has configured it, it types
 | | |
 |---|---|
 | Program | `out/usb_keyboard_device` |
-| Source | [src/usb_keyboard/](../src/usb_keyboard/) |
+| Source | [src/usb_keyboard/](https://github.com/freand76/usbip-server/tree/main/src/usb_keyboard) |
 | USB id | `fa00:0003` |
 | Interface | HID (class `0x03`), boot interface subclass, keyboard protocol |
 | Endpoint | `0x81` interrupt IN, 8 byte reports, polled every 8 ms |

@@ -6,7 +6,7 @@ binds its `cdc_acm` driver to it and the device shows up as `/dev/ttyACMx`.
 | | |
 |---|---|
 | Program | `out/usb_cdc_device` |
-| Source | [src/usb_cdc/](../src/usb_cdc/) |
+| Source | [src/usb_cdc/](https://github.com/freand76/usbip-server/tree/main/src/usb_cdc) |
 | USB id | `fa00:0001` |
 | Interfaces | communication interface (class `0x02`, ACM), data interface (class `0x0a`) |
 | Endpoints | `0x82` interrupt IN for notifications, `0x01` bulk OUT and `0x81` bulk IN for data, 512 byte packets |

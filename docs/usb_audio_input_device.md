@@ -8,7 +8,7 @@ second: a warbling chirp sweeping from 220 Hz to 1760 Hz while it fades out.
 | | |
 |---|---|
 | Program | `out/usb_audio_input_device` |
-| Source | [src/usb_audio_input/](../src/usb_audio_input/) |
+| Source | [src/usb_audio_input/](https://github.com/freand76/usbip-server/tree/main/src/usb_audio_input) |
 | USB id | `fa00:0004` |
 | Interfaces | audio control (class `0x01`, subclass `0x01`), audio streaming (class `0x01`, subclass `0x02`) with alternate settings 0 (idle) and 1 (streaming) |
 | Endpoint | `0x81` isochronous IN, asynchronous, one 96 byte packet per millisecond |
@@ -34,7 +34,7 @@ $ arecord -D plughw:CARD=Input -f S16_LE -r 48000 -c 1 -d 5 alien.wav
 $ aplay alien.wav
 ```
 
-Or play it live on the speakers with [tools/audio_loopback.py](../tools/audio_loopback.py),
+Or play it live on the speakers with [tools/audio_loopback.py](https://github.com/freand76/usbip-server/blob/main/tools/audio_loopback.py),
 which works with both PulseAudio and PipeWire. Start it before or after attaching the
 device; it plays the input until Ctrl-C, stops when the device is detached and starts
 again when it is attached:
@@ -72,7 +72,7 @@ Recording stopped
 ## How It Works
 
 - The descriptors in
-  [usb_audio_input_descriptors.h](../src/usb_audio_input/usb_audio_input_descriptors.h)
+  [usb_audio_input_descriptors.h](https://github.com/freand76/usbip-server/blob/main/src/usb_audio_input/usb_audio_input_descriptors.h)
   describe a microphone input terminal feeding a USB streaming output terminal, and a
   type I PCM format with one sample rate.
 - `iso_in_data()` is the isochronous IN callback. The server calls it once per 1 ms

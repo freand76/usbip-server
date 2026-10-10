@@ -7,7 +7,7 @@ can extend onto it, and the device shows what the host draws in a window.
 | | |
 |---|---|
 | Program | `out/usb_gud_display_device`, built with `make gud_display` |
-| Source | [src/usb_gud_display/](../src/usb_gud_display/) |
+| Source | [src/usb_gud_display/](https://github.com/freand76/usbip-server/tree/main/src/usb_gud_display) |
 | USB id | `1d50:614d`, the original GUD id |
 | Interface | class `0xff` (vendor specific) |
 | Endpoint | `0x01` bulk OUT for pixel data, 512 byte packets |
@@ -18,7 +18,7 @@ not use the `fa00` vendor id of the other examples.
 
 *To use the display as a framebuffer, drawn on by `modetest`, `ffmpeg`, the tools in
 `tools/` or your own programs, install the udev rule
-[udev/71-gud-mutter-ignore.rules](../udev/71-gud-mutter-ignore.rules) first, see GNOME
+[udev/71-gud-mutter-ignore.rules](https://github.com/freand76/usbip-server/blob/main/udev/71-gud-mutter-ignore.rules) first, see GNOME
 below. Without it GNOME takes the display over as a desktop monitor, and other programs
 can not show anything on it.*
 
@@ -54,7 +54,7 @@ Without the desktop, programs can also draw through the display's framebuffer de
 `sudo usermod -aG video $USER` and log in again.
 
 The kernel only shows the framebuffer once its mode has been set, so switch it on after
-each attach with [tools/fb_activate.py](../tools/fb_activate.py). It finds the GUD
+each attach with [tools/fb_activate.py](https://github.com/freand76/usbip-server/blob/main/tools/fb_activate.py). It finds the GUD
 display's framebuffer by itself:
 
 ```
@@ -70,7 +70,7 @@ $ ffmpeg -re -f lavfi -i testsrc2=size=320x240:rate=15 -pix_fmt rgb565le -f fbde
 $ ffmpeg -re -f lavfi -i mandelbrot=size=320x240:rate=15 -pix_fmt rgb565le -f fbdev /dev/fb1
 ```
 
-[tools/fb_animation.py](../tools/fb_animation.py) switches the framebuffer on itself and
+[tools/fb_animation.py](https://github.com/freand76/usbip-server/blob/main/tools/fb_animation.py) switches the framebuffer on itself and
 draws animated demo effects, a plasma, a tunnel flight and fire, in turn until Ctrl-C:
 
 ```
@@ -92,7 +92,7 @@ Two ways to work with this:
 - **Use it as a desktop monitor:** attach the display once per session. After a
   detach, log out and in before attaching it again.
 - **Keep GNOME away from it:** install the udev rule in
-  [udev/71-gud-mutter-ignore.rules](../udev/71-gud-mutter-ignore.rules) before the display
+  [udev/71-gud-mutter-ignore.rules](https://github.com/freand76/usbip-server/blob/main/udev/71-gud-mutter-ignore.rules) before the display
   is attached for the first time in a session. The desktop then never uses the display,
   it can be attached and detached freely, and `modetest` or your own program can draw
   on it:
@@ -127,9 +127,9 @@ Display: 3 updates, 153600 bytes, last 320x36 at 0,204, 0 errors
 ## How It Works
 
 - The control callback answers the GUD requests in
-  [usb_gud_display_device.c](../src/usb_gud_display/usb_gud_display_device.c): the display
+  [usb_gud_display_device.c](https://github.com/freand76/usbip-server/blob/main/src/usb_gud_display/usb_gud_display_device.c): the display
   descriptor, pixel formats, rotation property, connector, its status and display mode.
-  The protocol definitions are in [gud_protocol.h](../src/usb_gud_display/gud_protocol.h).
+  The protocol definitions are in [gud_protocol.h](https://github.com/freand76/usbip-server/blob/main/src/usb_gud_display/gud_protocol.h).
 - Control OUT requests can not be rejected through the library, so the display sets
   `GUD_DISPLAY_FLAG_STATUS_ON_SET`: the host reads the result of each one with
   `GUD_REQ_GET_STATUS`.
@@ -141,13 +141,13 @@ Display: 3 updates, 153600 bytes, last 320x36 at 0,204, 0 errors
   change and tells the desktop, which only picks up a display's connector when it
   changes.
 - The window code is in
-  [gud_display_window.c](../src/usb_gud_display/gud_display_window.c), the only file that
+  [gud_display_window.c](https://github.com/freand76/usbip-server/blob/main/src/usb_gud_display/gud_display_window.c), the only file that
   uses SDL3.
 
 ## Prototyping
 
 Resolution, pixel formats, buffer size and compression are set at the top of
-[usb_gud_display_descriptors.h](../src/usb_gud_display/usb_gud_display_descriptors.h).
+[usb_gud_display_descriptors.h](https://github.com/freand76/usbip-server/blob/main/src/usb_gud_display/usb_gud_display_descriptors.h).
 The window can show every format of 8 bits per pixel or more. LZ4 compression is not
 implemented yet; the place to decompress is marked in `endpoint_data()`.
 

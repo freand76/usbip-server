@@ -6,7 +6,7 @@ in a circle, one lap per second, for as long as it is attached.
 | | |
 |---|---|
 | Program | `out/usb_mouse_device` |
-| Source | [src/usb_mouse/](../src/usb_mouse/) |
+| Source | [src/usb_mouse/](https://github.com/freand76/usbip-server/tree/main/src/usb_mouse) |
 | USB id | `fa00:0002` |
 | Interface | HID (class `0x03`), boot interface subclass, mouse protocol |
 | Endpoint | `0x81` interrupt IN, 4 byte reports, polled every 16 ms |
@@ -55,7 +55,7 @@ hid-generic 0003:FA00:0002.000F: input,hidraw8: USB HID v1.11 Mouse [Virtual Usb
 
 Start here for pointing devices: mice, trackballs, joysticks, touch pads, or anything
 that reports movement. Change the polling interval in
-[usb_mouse_descriptors.h](../src/usb_mouse/usb_mouse_descriptors.h) and the report rate
+[usb_mouse_descriptors.h](https://github.com/freand76/usbip-server/blob/main/src/usb_mouse/usb_mouse_descriptors.h) and the report rate
 follows, as it would on real hardware.
 
 ## Troubleshooting
