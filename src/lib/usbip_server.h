@@ -12,6 +12,14 @@
         http://github.com/freand76/usbip-server
 ********************************************************/
 
+/**
+ * @file usbip_server.h
+ * @brief The server thread, which accepts clients and serves the device to them
+ *
+ * usbip_server_start(), usbip_server_stop() and usbip_server_interrupted() are documented in
+ * usbip_server_api.h.
+ */
+
 #ifndef USBIP_SERVER_H_
 #define USBIP_SERVER_H_
 
