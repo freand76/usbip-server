@@ -365,7 +365,7 @@ the existing examples, and add the program to `TARGETS`.
 - One device, served to one client at a time, on TCP port 3240 with bus id `1-1`.
 - The device is always reported as high speed.
 - Isochronous transfers are not supported.
-- Transfers larger than 4096 bytes are rejected, and one call to
+- Transfers larger than 64 KiB are rejected, and one call to
   `usbip_device_transmit()` carries at most 512 bytes.
 - No authentication. The server listens on the local machine only, unless
   `USBIP_BIND_ADDRESS` says otherwise.

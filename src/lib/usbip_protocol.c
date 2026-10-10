@@ -27,7 +27,7 @@
 #include "usbip_protocol.h"
 #include "usbip_protocol_definitions.h"
 
-#define USBIP_MAX_PACKET_SIZE (4096)
+#define USBIP_MAX_PACKET_SIZE (64 * 1024)
 #define USBIP_PROTOCOL_VERSION (0x0111)
 #define EP_STALL (-32)
 #define URB_UNLINKED (-104) /* -ECONNRESET */
