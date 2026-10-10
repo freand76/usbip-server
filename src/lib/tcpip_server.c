@@ -12,6 +12,7 @@
         http://github.com/freand76/usbip-server
 ********************************************************/
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -39,7 +40,7 @@ static int server_socket = -1;
 static int client_socket = -1;
 static volatile sig_atomic_t stop_server = false;
 
-bool tcpip_server_open(int port) {
+bool tcpip_server_open(const char *address, int port) {
     struct sockaddr_in addr;
 
     /* Ignore signal SIGPIPE, Broken pipe */
@@ -53,8 +54,12 @@ bool tcpip_server_open(int port) {
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
+    if (inet_pton(AF_INET, address, &addr.sin_addr) != 1) {
+        fprintf(stderr, "TCPIPServer: Invalid IPv4 address '%s'\n", address);
+        tcpip_server_close();
+        return false;
+    }
 
     if (bind(server_socket, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         tcpip_server_close();

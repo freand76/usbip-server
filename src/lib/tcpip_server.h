@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-bool tcpip_server_open(int port);
+bool tcpip_server_open(const char *address, int port);
 void tcpip_server_close(void);
 void tcpip_server_stop(void);
 void tcpip_server_close_client(void);

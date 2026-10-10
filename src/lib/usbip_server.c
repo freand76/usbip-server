@@ -27,6 +27,10 @@
 
 #define USBIP_PORT (3240)
 
+/* Only the local machine can attach unless another address is given */
+#define USBIP_BIND_ADDRESS_ENV "USBIP_BIND_ADDRESS"
+#define USBIP_DEFAULT_BIND_ADDRESS "127.0.0.1"
+
 static const usbip_device_t *usbip_device = NULL;
 static pthread_t thread_id;
 
@@ -90,8 +94,13 @@ bool usbip_server_start(const usbip_device_t *usb_device) {
 
     bool status = usbip_device_init();
 
+    const char *bind_address = getenv(USBIP_BIND_ADDRESS_ENV);
+    if (bind_address == NULL) {
+        bind_address = USBIP_DEFAULT_BIND_ADDRESS;
+    }
+
     if (status) {
-        status = tcpip_server_open(USBIP_PORT);
+        status = tcpip_server_open(bind_address, USBIP_PORT);
     }
 
     if (status) {
@@ -99,7 +108,7 @@ bool usbip_server_start(const usbip_device_t *usb_device) {
         status = (err == 0);
     }
     if (status) {
-        printf("USBIPServer: Started\n\n");
+        printf("USBIPServer: Started on %s:%d\n\n", bind_address, USBIP_PORT);
     }
     return status;
 }

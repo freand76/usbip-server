@@ -69,6 +69,17 @@ $ out/usb_mouse_device
 $ out/usb_keyboard_device
 ```
 
+### Allow Other Machines to Attach
+
+The server only accepts connections from the local machine. Set `USBIP_BIND_ADDRESS`
+to an IPv4 address to listen on, or `0.0.0.0` for all interfaces.
+
+```
+$ USBIP_BIND_ADDRESS=0.0.0.0 out/usb_cdc_device
+```
+
+*Anyone who can reach port 3240 can then attach the device, there is no authentication.*
+
 ## Attach Virtual Device
 
 ### Load Kernel Module to Handle USBIP
