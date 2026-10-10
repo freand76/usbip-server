@@ -1,0 +1,7 @@
+title: usbip-server
+description: Example USB devices for the usbip-server prototyping platform
+theme: jekyll-theme-primer
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
