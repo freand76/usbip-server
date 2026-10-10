@@ -30,6 +30,8 @@ typedef struct {
         uint8_t modifier; // Modifier mask (e.g., 0x02 = Left Shift)
 } hid_key_t;
 
+#define TYPING_START_DELAY_MS (1000)
+
 // Modifier bits (HID usage 0xE0–0xE7)
 #define MOD_LCTRL 0x01
 #define MOD_LSHIFT 0x02
@@ -80,6 +82,10 @@ int main(int argc, char *argv[]) {
                 break;
             }
         }
+
+        // The host's input stack starts listening a moment after the keyboard is configured,
+        // keys typed before that are lost
+        usleep(TYPING_START_DELAY_MS * 1000);
 
         for (size_t string_idx = 0; string_idx < strlen(typing_string); string_idx++) {
             if (usbip_server_interrupted()) {
