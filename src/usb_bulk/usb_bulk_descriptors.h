@@ -12,6 +12,14 @@
         http://github.com/freand76/usbip-server
 ********************************************************/
 
+/**
+ * @file usb_bulk_descriptors.h
+ * @brief Descriptors of the bulk example device, out/usb_bulk_device
+ *
+ * A vendor specific interface with one bulk OUT and one bulk IN endpoint. See
+ * docs/usb_bulk_device.md.
+ */
+
 #ifndef USB_BULK_DESCRIPTORS_H_
 #define USB_BULK_DESCRIPTORS_H_
 
@@ -23,6 +31,7 @@
 // USB Strings
 //
 
+/** @brief The device's strings, ended by an entry with id 0 */
 static const usb_string_t usb_strings[] = {
     {1, "Virtual UsbIP"},
     {2, "Virtual Bulk Device"},
@@ -37,6 +46,7 @@ static const usb_string_t usb_strings[] = {
 #define USB_VID 0xfa00
 #define USB_PID 0xc001
 
+/** @brief Device descriptor */
 static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
     USB_DEVICE_DESCRIPTOR_LENGTH, // bLength
     USB_DESCRIPTOR_TYPE_DEVICE,   // bDescriptorType
@@ -59,13 +69,14 @@ static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 };
 
 //
-// Configuration ID Descriptor
+// Configuration Descriptor
 //
 
 #define USB_BULK_CONFIG_DESC_LENGTH (32)
-#define BULK_CMD_PACKET_SZE 8    /* Control Endpoint Packet size */
+#define BULK_CMD_PACKET_SZE 8    /* Not used by this device */
 #define BULK_DATA_PACKET_SZE 512 /* Data Endpoint Packet size */
 
+/** @brief Configuration descriptor, followed by the descriptors of its interfaces and endpoints */
 uint8_t bulk_config_descriptor[USB_BULK_CONFIG_DESC_LENGTH] = {
     0x09,                                /* bLength: Configuration Descriptor size */
     USB_DESCRIPTOR_TYPE_CONFIGURATION,   /* bDescriptorType */
@@ -79,8 +90,8 @@ uint8_t bulk_config_descriptor[USB_BULK_CONFIG_DESC_LENGTH] = {
 
     /*---------------------------------------------------------------------------*/
 
-    /*Data class interface descriptor*/
-    0x09,                          /* bLength: Endpoint Descriptor size */
+    /*Vendor specific interface descriptor*/
+    0x09,                          /* bLength: Interface Descriptor size */
     USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType: */
     0x00,                          /* bInterfaceNumber: Number of Interface */
     0x00,                          /* bAlternateSetting: Alternate setting */
@@ -116,6 +127,7 @@ uint8_t bulk_config_descriptor[USB_BULK_CONFIG_DESC_LENGTH] = {
 #define USB_LANGID_STRING 0x409 /* 1033 US.S English */
 #define USB_LANGID_DESC_LENGTH (4)
 
+/** @brief String descriptor 0, the supported language ids */
 static const uint8_t langid_desc[USB_LANGID_DESC_LENGTH] = {
     USB_LANGID_DESC_LENGTH,
     USB_DESCRIPTOR_TYPE_STRING,

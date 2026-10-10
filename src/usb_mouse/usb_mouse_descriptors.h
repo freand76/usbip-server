@@ -12,6 +12,14 @@
         http://github.com/freand76/usbip-server
 ********************************************************/
 
+/**
+ * @file usb_mouse_descriptors.h
+ * @brief Descriptors of the HID mouse example, out/usb_mouse_device
+ *
+ * A HID boot mouse with one interrupt IN endpoint for 4 byte reports. See
+ * docs/usb_mouse_device.md.
+ */
+
 #ifndef USB_MOUSE_DESCRIPTORS_H_
 #define USB_MOUSE_DESCRIPTORS_H_
 
@@ -23,6 +31,7 @@
 // USB Strings
 //
 
+/** @brief The device's strings, ended by an entry with id 0 */
 static const usb_string_t usb_strings[] = {
     {1, "Virtual UsbIP"},
     {2, "Virtual HID Mouse"},
@@ -37,6 +46,7 @@ static const usb_string_t usb_strings[] = {
 #define USB_VID 0xfa00
 #define USB_PID 0x0002
 
+/** @brief Device descriptor */
 static const uint8_t usb_mouse_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
     USB_DEVICE_DESCRIPTOR_LENGTH, // bLength
     USB_DESCRIPTOR_TYPE_DEVICE,   // bDescriptorType
@@ -59,7 +69,7 @@ static const uint8_t usb_mouse_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 };
 
 //
-// Configuration ID Descriptor
+// Configuration Descriptor
 //
 
 #define USB_MOUSE_CONFIG_DESC_LENGTH (34)
@@ -72,6 +82,7 @@ static const uint8_t usb_mouse_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 
 #define USB_HID_BCD 0x111
 
+/** @brief Configuration descriptor, followed by the descriptors of its interfaces and endpoints */
 static const uint8_t usb_mouse_configuration[USB_MOUSE_CONFIG_DESC_LENGTH] = {
     0x09,                                 /* bLength: Configuration Descriptor size */
     USB_DESCRIPTOR_TYPE_CONFIGURATION,    /* bDescriptorType: Configuration */
@@ -80,10 +91,10 @@ static const uint8_t usb_mouse_configuration[USB_MOUSE_CONFIG_DESC_LENGTH] = {
     0x01,                                 /*bNumInterfaces: 1 interface*/
     0x01,                                 /*bConfigurationValue: Configuration value*/
     0x00, /*iConfiguration: Index of string descriptor describing the configuration*/
-    0xC0, /*bmAttributes: bus powered and Support Remote Wake-up */
+    0xC0, /*bmAttributes: self powered, no remote wakeup */
     0x32, /*MaxPower 100 mA: this current is used for detecting Vbus*/
 
-    /************** Descriptor of Joystick Mouse interface ****************/
+    /************** Descriptor of Mouse interface ****************/
     0x09,                          /*bLength: Interface Descriptor size*/
     USB_DESCRIPTOR_TYPE_INTERFACE, /*bDescriptorType: Interface descriptor type*/
     0x00,                          /*bInterfaceNumber: Number of Interface*/
@@ -93,7 +104,7 @@ static const uint8_t usb_mouse_configuration[USB_MOUSE_CONFIG_DESC_LENGTH] = {
     0x01,                          /*bInterfaceSubClass : 1=BOOT, 0=no boot*/
     0x02,                          /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
     0,                             /*iInterface: Index of string descriptor*/
-    /******************** Descriptor of Joystick Mouse HID ********************/
+    /******************** Descriptor of Mouse HID ********************/
     0x09,                       /*bLength: HID Descriptor size*/
     USB_DESCRIPTOR_TYPE_HID,    /*bDescriptorType: HID*/
     LOBYTE(USB_HID_BCD),        /*bcdHID: HID Class Spec release number*/
@@ -120,6 +131,7 @@ static const uint8_t usb_mouse_configuration[USB_MOUSE_CONFIG_DESC_LENGTH] = {
 #define USB_LANGID_STRING 0x409 /* 1033 US.S English */
 #define USB_LANGID_DESC_LENGTH (4)
 
+/** @brief String descriptor 0, the supported language ids */
 static const uint8_t langid_desc[USB_LANGID_DESC_LENGTH] = {
     USB_LANGID_DESC_LENGTH,
     USB_DESCRIPTOR_TYPE_STRING,
@@ -131,6 +143,7 @@ static const uint8_t langid_desc[USB_LANGID_DESC_LENGTH] = {
 // HID Report Descriptor
 //
 
+/** @brief HID report descriptor, the layout of the reports */
 static uint8_t usb_mouse_hid_report[] = {
     0x05, 0x01, // USAGE_PAGE (Generic Desktop)
     0x09, 0x02, // USAGE (Mouse)
@@ -154,7 +167,7 @@ static uint8_t usb_mouse_hid_report[] = {
     0x15, 0x81, //     LOGICAL_MINIMUM (-127)
     0x25, 0x7f, //     LOGICAL_MAXIMUM (127)
     0x75, 0x08, //     REPORT_SIZE (8)
-    0x95, 0x03, //     REPORT_COUNT (2)
+    0x95, 0x03, //     REPORT_COUNT (3)
     0x81, 0x06, //     INPUT (Data,Var,Rel)
     0xc0,       //   END_COLLECTION
     0xc0,       //   END_COLLECTION

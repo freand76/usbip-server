@@ -12,6 +12,14 @@
         http://github.com/freand76/usbip-server
 ********************************************************/
 
+/**
+ * @file usb_cdc_descriptors.h
+ * @brief Descriptors of the CDC ACM serial port example, out/usb_cdc_device
+ *
+ * A communication interface with an interrupt IN endpoint for notifications, and a data
+ * interface with one bulk OUT and one bulk IN endpoint. See docs/usb_cdc_device.md.
+ */
+
 #ifndef USB_CDC_DESCRIPTORS_H_
 #define USB_CDC_DESCRIPTORS_H_
 
@@ -23,6 +31,7 @@
 // USB Strings
 //
 
+/** @brief The device's strings, ended by an entry with id 0 */
 static const usb_string_t usb_strings[] = {
     {1, "Virtual UsbIP"},
     {2, "Virtual CDC Device"},
@@ -37,6 +46,7 @@ static const usb_string_t usb_strings[] = {
 #define USB_VID 0xfa00
 #define USB_PID 0x0001
 
+/** @brief Device descriptor */
 static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
     USB_DEVICE_DESCRIPTOR_LENGTH, // bLength
     USB_DESCRIPTOR_TYPE_DEVICE,   // bDescriptorType
@@ -59,13 +69,14 @@ static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 };
 
 //
-// Configuration ID Descriptor
+// Configuration Descriptor
 //
 
 #define USB_CDC_CONFIG_DESC_LENGTH (67)
-#define CDC_CMD_PACKET_SZE 8    /* Control Endpoint Packet size */
+#define CDC_CMD_PACKET_SZE 8    /* Notification Endpoint Packet size */
 #define CDC_DATA_PACKET_SZE 512 /* Data Endpoint Packet size */
 
+/** @brief Configuration descriptor, followed by the descriptors of its interfaces and endpoints */
 uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     0x09,                               /* bLength: Configuration Descriptor size */
     USB_DESCRIPTOR_TYPE_CONFIGURATION,  /* bDescriptorType */
@@ -89,7 +100,7 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     0x00,                          /* iInterface: */
 
     /*Header Functional Descriptor*/
-    0x05, /* bLength: Endpoint Descriptor size */
+    0x05, /* bFunctionLength */
     0x24, /* bDescriptorType: CS_INTERFACE */
     0x00, /* bDescriptorSubtype: Header Func Desc */
     0x10, /* bcdCDC: spec release number */
@@ -127,7 +138,7 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
     /*---------------------------------------------------------------------------*/
 
     /*Data class interface descriptor*/
-    0x09,                          /* bLength: Endpoint Descriptor size */
+    0x09,                          /* bLength: Interface Descriptor size */
     USB_DESCRIPTOR_TYPE_INTERFACE, /* bDescriptorType: */
     0x01,                          /* bInterfaceNumber: Number of Interface */
     0x00,                          /* bAlternateSetting: Alternate setting */
@@ -163,6 +174,7 @@ uint8_t cdc_config_descriptor[USB_CDC_CONFIG_DESC_LENGTH] = {
 #define USB_LANGID_STRING 0x409 /* 1033 US.S English */
 #define USB_LANGID_DESC_LENGTH (4)
 
+/** @brief String descriptor 0, the supported language ids */
 static const uint8_t langid_desc[USB_LANGID_DESC_LENGTH] = {
     USB_LANGID_DESC_LENGTH,
     USB_DESCRIPTOR_TYPE_STRING,

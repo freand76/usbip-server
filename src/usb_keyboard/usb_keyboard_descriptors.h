@@ -12,6 +12,14 @@
         http://github.com/freand76/usbip-server
 ********************************************************/
 
+/**
+ * @file usb_keyboard_descriptors.h
+ * @brief Descriptors of the HID keyboard example, out/usb_keyboard_device
+ *
+ * A HID boot keyboard with one interrupt IN endpoint for 8 byte reports. See
+ * docs/usb_keyboard_device.md.
+ */
+
 #ifndef USB_KEYBOARD_DESCRIPTORS_H_
 #define USB_KEYBOARD_DESCRIPTORS_H_
 
@@ -23,6 +31,7 @@
 // USB Strings
 //
 
+/** @brief The device's strings, ended by an entry with id 0 */
 static const usb_string_t usb_strings[] = {
     {1, "Virtual UsbIP"},
     {2, "Virtual HID Keyboard"},
@@ -37,6 +46,7 @@ static const usb_string_t usb_strings[] = {
 #define USB_VID 0xfa00
 #define USB_PID 0x0003
 
+/** @brief Device descriptor */
 static const uint8_t usb_keyboard_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
     USB_DEVICE_DESCRIPTOR_LENGTH, // bLength
     USB_DESCRIPTOR_TYPE_DEVICE,   // bDescriptorType
@@ -59,7 +69,7 @@ static const uint8_t usb_keyboard_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 };
 
 //
-// Configuration ID Descriptor
+// Configuration Descriptor
 //
 
 #define USB_KEYBOARD_CONFIG_DESC_LENGTH (34)
@@ -71,6 +81,7 @@ static const uint8_t usb_keyboard_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 
 #define USB_HID_BCD 0x111
 
+/** @brief Configuration descriptor, followed by the descriptors of its interfaces and endpoints */
 static const uint8_t usb_keyboard_configuration[USB_KEYBOARD_CONFIG_DESC_LENGTH] = {
     0x09,                                    /* bLength: Configuration Descriptor size */
     USB_DESCRIPTOR_TYPE_CONFIGURATION,       /* bDescriptorType: Configuration */
@@ -79,7 +90,7 @@ static const uint8_t usb_keyboard_configuration[USB_KEYBOARD_CONFIG_DESC_LENGTH]
     0x01,                                    /*bNumInterfaces: 1 interface*/
     0x01,                                    /*bConfigurationValue: Configuration value*/
     0x00, /*iConfiguration: Index of string descriptor describing the configuration*/
-    0xC0, /*bmAttributes: bus powered and Support Remote Wake-up */
+    0xC0, /*bmAttributes: self powered, no remote wakeup */
     0x32, /*MaxPower 100 mA: this current is used for detecting Vbus*/
 
     /************** Descriptor of Keyboard interface ****************/
@@ -92,7 +103,7 @@ static const uint8_t usb_keyboard_configuration[USB_KEYBOARD_CONFIG_DESC_LENGTH]
     0x01,                          /*bInterfaceSubClass : 1=BOOT, 0=no boot*/
     0x01,                          /*nInterfaceProtocol : 0=none, 1=keyboard, 2=keyboard*/
     0,                             /*iInterface: Index of string descriptor*/
-    /******************** Descriptor of Joystick Keyboard HID ********************/
+    /******************** Descriptor of Keyboard HID ********************/
     0x09,                       /*bLength: HID Descriptor size*/
     USB_DESCRIPTOR_TYPE_HID,    /*bDescriptorType: HID*/
     LOBYTE(USB_HID_BCD),        /*bcdHID: HID Class Spec release number*/
@@ -119,6 +130,7 @@ static const uint8_t usb_keyboard_configuration[USB_KEYBOARD_CONFIG_DESC_LENGTH]
 #define USB_LANGID_STRING 0x409 /* 1033 US.S English */
 #define USB_LANGID_DESC_LENGTH (4)
 
+/** @brief String descriptor 0, the supported language ids */
 static const uint8_t langid_desc[USB_LANGID_DESC_LENGTH] = {
     USB_LANGID_DESC_LENGTH,
     USB_DESCRIPTOR_TYPE_STRING,
@@ -130,6 +142,7 @@ static const uint8_t langid_desc[USB_LANGID_DESC_LENGTH] = {
 // HID Report Descriptor
 //
 
+/** @brief HID report descriptor, the layout of the reports */
 static uint8_t usb_keyboard_hid_report[] = {
     0x05, 0x01, // Usage Page (Generic Desktop)
     0x09, 0x06, // Usage (Keyboard)

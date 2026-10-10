@@ -12,6 +12,16 @@
         http://github.com/freand76/usbip-server
 ********************************************************/
 
+/**
+ * @file usb_gud_display_descriptors.h
+ * @brief Display configuration and descriptors of the GUD display example,
+ * out/usb_gud_display_device
+ *
+ * The display configuration at the top sets resolution, pixel formats, buffer size and
+ * compression. The USB side is a vendor specific interface with one bulk OUT endpoint for
+ * pixel data. See docs/usb_gud_display_device.md.
+ */
+
 #ifndef USB_GUD_DISPLAY_DESCRIPTORS_H_
 #define USB_GUD_DISPLAY_DESCRIPTORS_H_
 
@@ -24,25 +34,29 @@
 // Display Configuration
 //
 
+/** @brief Display width in pixels, the only mode the display offers */
 #define DISPLAY_WIDTH (320)
+/** @brief Display height in pixels */
 #define DISPLAY_HEIGHT (240)
+/** @brief Refresh rate of the display mode */
 #define DISPLAY_REFRESH_HZ (60)
 
-/* Pixel formats offered to the host, in order of preference */
+/** @brief Pixel formats offered to the host, in order of preference */
 static const uint8_t display_formats[] = {
     GUD_PIXEL_FORMAT_RGB565,
 };
 
-/* The host splits updates into transfers of at most this size */
+/** @brief The host splits updates into transfers of at most this size */
 #define DISPLAY_MAX_BUFFER_SIZE (64 * 1024)
 
-/* GUD_COMPRESSION_LZ4 once the device can decompress */
+/** @brief Compression types offered, GUD_COMPRESSION_LZ4 once the device can decompress */
 #define DISPLAY_COMPRESSION (0)
 
 //
 // USB Strings
 //
 
+/** @brief The device's strings, ended by an entry with id 0 */
 static const usb_string_t usb_strings[] = {
     {1, "Virtual UsbIP"},
     {2, "Virtual GUD Display"},
@@ -58,6 +72,7 @@ static const usb_string_t usb_strings[] = {
 #define USB_VID 0x1d50
 #define USB_PID 0x614d
 
+/** @brief Device descriptor */
 static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
     USB_DEVICE_DESCRIPTOR_LENGTH, // bLength
     USB_DESCRIPTOR_TYPE_DEVICE,   // bDescriptorType
@@ -89,6 +104,7 @@ static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
 
 #define USB_GUD_CONFIG_DESC_LENGTH (9 + 9 + 7)
 
+/** @brief Configuration descriptor, followed by the descriptors of its interfaces and endpoints */
 static const uint8_t usb_gud_configuration[USB_GUD_CONFIG_DESC_LENGTH] = {
     0x09,                               /* bLength: Configuration Descriptor size */
     USB_DESCRIPTOR_TYPE_CONFIGURATION,  /* bDescriptorType */
@@ -128,6 +144,7 @@ static const uint8_t usb_gud_configuration[USB_GUD_CONFIG_DESC_LENGTH] = {
 #define USB_LANGID_STRING 0x409 /* 1033 US.S English */
 #define USB_LANGID_DESC_LENGTH (4)
 
+/** @brief String descriptor 0, the supported language ids */
 static const uint8_t langid_desc[USB_LANGID_DESC_LENGTH] = {
     USB_LANGID_DESC_LENGTH,
     USB_DESCRIPTOR_TYPE_STRING,

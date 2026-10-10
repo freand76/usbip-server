@@ -12,6 +12,15 @@
         http://github.com/freand76/usbip-server
 ********************************************************/
 
+/**
+ * @file usb_audio_input_descriptors.h
+ * @brief Descriptors of the audio input example, out/usb_audio_input_device
+ *
+ * A USB Audio Class 1.0 microphone: an audio control interface, and an audio streaming
+ * interface whose alternate setting 1 has an isochronous IN endpoint. See
+ * docs/usb_audio_input_device.md.
+ */
+
 #ifndef USB_AUDIO_INPUT_DESCRIPTORS_H_
 #define USB_AUDIO_INPUT_DESCRIPTORS_H_
 
@@ -23,6 +32,7 @@
 // USB Strings
 //
 
+/** @brief The device's strings, ended by an entry with id 0 */
 static const usb_string_t usb_strings[] = {
     {1, "Virtual UsbIP"},
     {2, "Virtual Audio Input"},
@@ -37,6 +47,7 @@ static const usb_string_t usb_strings[] = {
 #define USB_VID 0xfa00
 #define USB_PID 0x0004
 
+/** @brief Device descriptor */
 static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
     USB_DEVICE_DESCRIPTOR_LENGTH, // bLength
     USB_DESCRIPTOR_TYPE_DEVICE,   // bDescriptorType
@@ -117,6 +128,7 @@ static const uint8_t usb_device_descriptor[USB_DEVICE_DESCRIPTOR_LENGTH] = {
      + 9 + 7 + 11                /* Audio streaming interface, alternate setting 1 */              \
      + 9 + 7)                    /* Isochronous endpoint */
 
+/** @brief Configuration descriptor, followed by the descriptors of its interfaces and endpoints */
 static const uint8_t usb_audio_configuration[USB_AUDIO_CONFIG_DESC_LENGTH] = {
     0x09,                                 /* bLength: Configuration Descriptor size */
     USB_DESCRIPTOR_TYPE_CONFIGURATION,    /* bDescriptorType */
@@ -251,6 +263,7 @@ static const uint8_t usb_audio_configuration[USB_AUDIO_CONFIG_DESC_LENGTH] = {
 #define USB_LANGID_STRING 0x409 /* 1033 US.S English */
 #define USB_LANGID_DESC_LENGTH (4)
 
+/** @brief String descriptor 0, the supported language ids */
 static const uint8_t langid_desc[USB_LANGID_DESC_LENGTH] = {
     USB_LANGID_DESC_LENGTH,
     USB_DESCRIPTOR_TYPE_STRING,
