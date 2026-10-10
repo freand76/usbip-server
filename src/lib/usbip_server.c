@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "usbip_device.h"
 #include "usbip_protocol.h"
@@ -35,17 +36,23 @@ static const usbip_device_t *usbip_device = NULL;
 static pthread_t thread_id;
 
 static volatile sig_atomic_t keep_running = 3;
+static volatile sig_atomic_t panic_counter = 0;
+
+/* Only async-signal-safe functions may be used from the signal handler */
+static void write_stderr(const char *message) {
+    if (write(STDERR_FILENO, message, strlen(message)) < 0) {
+        /* Nothing to do if stderr is gone */
+    }
+}
 
 static void int_handler(int unused) {
     (void)unused;
-    static int panic_counter = 0;
 
     if (keep_running == 3) {
-        fprintf(stderr, "\nServer: Ctrl-C received, Do it 3 times if you really want to quit\n");
+        write_stderr("\nServer: Ctrl-C received, Do it 3 times if you really want to quit\n");
     } else {
-        fprintf(stderr, "\n");
+        write_stderr("\n");
     }
-    fflush(stderr);
 
     if (keep_running > 0) {
         keep_running--;
@@ -56,7 +63,7 @@ static void int_handler(int unused) {
     } else {
         panic_counter++;
         if (panic_counter == 5) {
-            exit(0);
+            _exit(0);
         }
     }
 }
@@ -89,7 +96,11 @@ static void *usbip_server_worker_thread(void *arg) {
 
 bool usbip_server_start(const usbip_device_t *usb_device) {
     /* Make it possible to kill the server */
-    signal(SIGINT, int_handler);
+    struct sigaction int_action = {0};
+    int_action.sa_handler = int_handler;
+    sigemptyset(&int_action.sa_mask);
+    int_action.sa_flags = SA_RESTART;
+    sigaction(SIGINT, &int_action, NULL);
 
     usbip_device = usb_device;
 
@@ -105,7 +116,14 @@ bool usbip_server_start(const usbip_device_t *usb_device) {
     }
 
     if (status) {
+        /* Ctrl-C is handled by the application, never by interrupting the worker thread */
+        sigset_t int_set;
+        sigset_t old_set;
+        sigemptyset(&int_set);
+        sigaddset(&int_set, SIGINT);
+        pthread_sigmask(SIG_BLOCK, &int_set, &old_set);
         int err = pthread_create(&thread_id, NULL, &usbip_server_worker_thread, NULL);
+        pthread_sigmask(SIG_SETMASK, &old_set, NULL);
         status = (err == 0);
     }
     if (status) {
