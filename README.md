@@ -66,8 +66,9 @@ user space, so there is no physical device at all:
 
 The library answers the standard USB requests (descriptors, status, configuration),
 queues transfers until your device has data, like a real device answering with NAK,
-and polls interrupt endpoints at the interval from your descriptors. Your code only
-handles what is specific to the device.
+and runs interrupt and isochronous endpoints at the interval from your descriptors, so
+streams such as audio play in real time. Your code only handles what is specific to the
+device.
 
 ## Requirements
 
@@ -270,8 +271,8 @@ descriptors must follow the high speed rules:
 
 - `bMaxPacketSize0` is 64
 - bulk endpoints use 512 byte packets
-- interrupt `bInterval` is an exponent: the polling period is 2^(bInterval-1) × 125 µs,
-  so 8 means 16 ms
+- interrupt and isochronous `bInterval` is an exponent: the polling period is
+  2^(bInterval-1) × 125 µs, so 8 means 16 ms and 4 means 1 ms
 
 ### 2. The Device
 
@@ -291,6 +292,11 @@ static void reset(void) {
     /* A host attached or went away, forget per-session state */
 }
 
+static size_t iso_in_data(uint8_t ep, uint8_t *buffer, size_t max_length) {
+    /* Fill one service interval of an isochronous IN endpoint, return the length */
+    return 0;
+}
+
 static const usbip_device_t my_device = {
     .device_desc = device_descriptor,
     .config_desc = config_descriptor,
@@ -299,6 +305,7 @@ static const usbip_device_t my_device = {
     .control_data_callback = control_data,
     .ep_data_callback = endpoint_data, /* Optional */
     .reset_callback = reset,           /* Optional */
+    .iso_in_callback = iso_in_data,    /* Optional */
 };
 
 int main(void) {
@@ -334,6 +341,12 @@ int main(void) {
 - **Interrupt IN endpoints are paced**: the host receives at most one transfer per
   polling interval, as on a real bus, so a device loop can simply call
   `usbip_device_transmit()` and will run at the speed the descriptors promise.
+- **Isochronous endpoints stream in real time**: a transfer of N packets completes N
+  service intervals after the previous one on the endpoint, as on a real bus. For an IN
+  endpoint the iso IN callback is asked for each packet's data when the transfer
+  completes, so it should return exactly one interval's worth of data, for example 48
+  audio samples per 1 ms. A packet of an OUT endpoint reaches the endpoint data callback
+  as soon as the host sends it.
 - **Callbacks run on the server thread.** `usbip_device_transmit()` can not wait there
   (or inside a critical section), so it drops the data and returns false if the
   endpoint still has unread data.
@@ -364,7 +377,7 @@ the existing examples, and add the program to `TARGETS`.
 
 - One device, served to one client at a time, on TCP port 3240 with bus id `1-1`.
 - The device is always reported as high speed.
-- Isochronous transfers are not supported.
+- At most 128 packets per isochronous transfer, enough for Linux drivers and usbfs.
 - Transfers larger than 64 KiB are rejected, and one call to
   `usbip_device_transmit()` carries at most 512 bytes.
 - No authentication. The server listens on the local machine only, unless

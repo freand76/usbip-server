@@ -33,6 +33,14 @@ typedef void(control_data_func_t)(const uint8_t *setup, const uint8_t *data, siz
 typedef void(endpoint_data_func_t)(uint8_t ep, const uint8_t *data, size_t data_length);
 
 /**
+ * @brief Callback function type for isochronous IN endpoints
+ *
+ * Called once per service interval of the endpoint, as the host reads it. Write the data for
+ * this interval, at most max_length bytes, to buffer and return how many bytes were written.
+ */
+typedef size_t(iso_in_data_func_t)(uint8_t ep, uint8_t *buffer, size_t max_length);
+
+/**
  * @brief Callback function type for USB reset
  *
  * Called when a host attaches the device and when it disconnects, like a bus reset or a
@@ -58,7 +66,8 @@ typedef struct {
         const usb_string_t *usb_strings;
         control_data_func_t *control_data_callback;
         endpoint_data_func_t *ep_data_callback;
-        reset_func_t *reset_callback; /* Optional */
+        reset_func_t *reset_callback;        /* Optional */
+        iso_in_data_func_t *iso_in_callback; /* Optional */
 } usbip_device_t;
 
 /**

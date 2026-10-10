@@ -34,6 +34,10 @@ void usbip_device_stop(void);
 void usbip_device_receive(const usbip_device_t *usb_device, uint8_t ep, uint8_t *data,
                           size_t data_length);
 
+/* Data for one service interval of an isochronous IN endpoint */
+size_t usbip_device_iso_in(const usbip_device_t *usb_device, uint8_t ep, uint8_t *buffer,
+                           size_t max_length);
+
 /* File descriptor that becomes readable when IN endpoint data is available */
 int usbip_device_get_event_fd(void);
 

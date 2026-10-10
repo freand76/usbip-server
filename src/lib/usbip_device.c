@@ -29,9 +29,11 @@
 
 #define USB_REQUEST_TYPE_STANDARD (0)
 
+#define USB_TRANSFER_TYPE_ISOCHRONOUS (1)
 #define USB_TRANSFER_TYPE_BULK (2)
 #define USB_TRANSFER_TYPE_INTERRUPT (3)
 #define FULL_SPEED_MAX_PACKET_SIZE (64)
+#define FULL_SPEED_MAX_ISO_PACKET_SIZE (1023)
 
 #define USB_REQUEST_RECIPIENT_DEVICE (0)
 #define USB_REQUEST_RECIPIENT_INTERFACE (1)
@@ -110,6 +112,17 @@ void usbip_device_receive(const usbip_device_t *usb_device, uint8_t ep, uint8_t 
 
 void usbip_device_mark_server_thread(void) {
     is_server_thread = true;
+}
+
+size_t usbip_device_iso_in(const usbip_device_t *usb_device, uint8_t ep, uint8_t *buffer,
+                           size_t max_length) {
+    size_t length = 0;
+    if (usb_device->iso_in_callback != NULL) {
+        pthread_mutex_lock(&receive_lock);
+        length = usb_device->iso_in_callback(ep, buffer, max_length);
+        pthread_mutex_unlock(&receive_lock);
+    }
+    return (length < max_length) ? length : max_length;
 }
 
 bool usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length) {
@@ -365,6 +378,21 @@ static size_t build_other_speed_config(const uint8_t *config_desc, uint8_t *buff
                 uint8_t exponent = (desc[6] > 16) ? 16 : desc[6];
                 size_t interval_ms = ((size_t)1 << (exponent - 1)) / 8;
                 desc[6] = (interval_ms < 1) ? 1 : (interval_ms > 255) ? 255 : interval_ms;
+            }
+        } else if ((desc[1] == USB_DESCRIPTOR_TYPE_ENDPOINT) &&
+                   (transfer_type == USB_TRANSFER_TYPE_ISOCHRONOUS)) {
+            /* Full speed has one transaction per frame of at most 1023 bytes */
+            uint16_t max_packet_size = ((desc[5] << 8) | desc[4]) & 0x07ff;
+            if (max_packet_size > FULL_SPEED_MAX_ISO_PACKET_SIZE) {
+                max_packet_size = FULL_SPEED_MAX_ISO_PACKET_SIZE;
+            }
+            desc[4] = max_packet_size & 0xff;
+            desc[5] = max_packet_size >> 8;
+            /* Both speeds use 2^(bInterval - 1), counting 125 us microframes or 1 ms frames */
+            if (desc[6] > 3) {
+                desc[6] -= 3;
+            } else {
+                desc[6] = 1;
             }
         }
         idx += desc[0];

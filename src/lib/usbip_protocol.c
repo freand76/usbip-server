@@ -32,19 +32,34 @@
 #define EP_STALL (-32)
 #define URB_UNLINKED (-104) /* -ECONNRESET */
 #define MAX_PENDING_URBS (32)
+/* The most packets usbfs allows in one isochronous transfer, kernel drivers use fewer */
+#define MAX_ISO_PACKETS (128)
 #define NUMBER_OF_ENDPOINTS (16)
 #define WAIT_TIMEOUT_US (500000)
 
 typedef struct {
-        uint8_t type;          /* USB_ENDPOINT_XFER_* from the endpoint descriptor */
-        uint64_t interval_us;  /* Service interval of interrupt IN endpoints */
-        uint64_t next_poll_us; /* Interrupt IN: when the next transfer may complete */
+        uint8_t type;           /* USB_ENDPOINT_XFER_* from the endpoint descriptor */
+        uint64_t interval_us;   /* Service interval of interrupt IN and isochronous endpoints */
+        uint64_t next_poll_us;  /* Interrupt IN: when the next transfer may complete */
+        uint64_t stream_end_us; /* Isochronous: when the last queued transfer completes */
 } endpoint_t;
+
+typedef struct {
+        uint32_t offset;
+        uint32_t length;
+} iso_packet_t;
 
 typedef struct {
         uint32_t seqnum;
         uint32_t ep;
+        uint32_t direction;
         uint32_t transfer_buffer_length;
+        /* Isochronous transfers only */
+        bool isochronous;
+        uint32_t start_frame;
+        uint32_t number_of_packets;
+        uint64_t complete_us;
+        iso_packet_t packets[MAX_ISO_PACKETS];
 } pending_urb_t;
 
 static bool device_imported = false;
@@ -52,8 +67,8 @@ static bool device_imported = false;
 static pending_urb_t pending_urbs[MAX_PENDING_URBS];
 static size_t num_pending_urbs = 0;
 
-/* Indexed by direction (0 = OUT, 1 = IN) and endpoint number, interrupt IN endpoints complete at
-   most one transfer per polling interval, like on a real bus */
+/* Indexed by direction (0 = OUT, 1 = IN) and endpoint number, interrupt IN and isochronous
+   endpoints complete transfers at their service interval, like on a real bus */
 static endpoint_t endpoints[2][NUMBER_OF_ENDPOINTS];
 static uint64_t wait_timeout_us = WAIT_TIMEOUT_US;
 
@@ -70,13 +85,18 @@ static bool transmit_import_response(const usbip_device_t *usb_device);
 static bool process_imported_cmd(const usbip_device_t *usb_device);
 static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, uint32_t ep,
                            uint32_t direction);
+static bool process_iso_submit(const usbip_device_t *usb_device, uint32_t seqnum, uint32_t ep,
+                               uint32_t direction, const usbip_cmd_submit_t *cmd_submit,
+                               endpoint_t *endpoint);
 static bool process_unlink(uint32_t seqnum);
-static bool complete_pending_urbs(void);
+static bool complete_pending_urbs(const usbip_device_t *usb_device);
+static bool has_pending_iso_urbs(uint32_t ep, uint32_t direction);
 static void load_endpoints(const uint8_t *config_desc);
 static uint64_t now_us(void);
 static void remove_pending_urb(size_t idx);
 static bool transmit_ret_submit(uint32_t seqnum, int32_t urb_status, size_t actual_length,
                                 bool send_data);
+static bool transmit_iso_ret_submit(const usbip_device_t *usb_device, const pending_urb_t *urb);
 
 bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
     op_req_head_t req_head;
@@ -133,7 +153,7 @@ bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
     /* Clear before completing, data transmitted after this wakes the next wait */
     usbip_device_clear_event();
     if (status) {
-        status = complete_pending_urbs();
+        status = complete_pending_urbs(usb_device);
     }
 
     if (!status) {
@@ -175,6 +195,7 @@ static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, ui
     usbip_cmd_submit_t cmd_submit;
     bool status = tcpip_server_read(&cmd_submit, sizeof(cmd_submit));
     uint32_t transfer_buffer_length = SWAP32(cmd_submit.transfer_buffer_length);
+    endpoint_t *endpoint = &endpoints[(direction != 0) ? 1 : 0][ep & USB_ENDPOINT_NUMBER_MASK];
 
     if (status && (transfer_buffer_length > USBIP_MAX_PACKET_SIZE)) {
         fprintf(stderr, "USBIPProtocol: Transfer buffer length %u exceeds max packet size %u\n",
@@ -188,6 +209,10 @@ static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, ui
 
     if (!status) {
         return false;
+    }
+
+    if ((ep != 0) && (endpoint->type == USB_ENDPOINT_XFER_ISOC)) {
+        return process_iso_submit(usb_device, seqnum, ep, direction, &cmd_submit, endpoint);
     }
 
     if (ep == 0) {
@@ -225,11 +250,72 @@ static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, ui
                 seqnum);
         return transmit_ret_submit(seqnum, 0, 0, true);
     }
-    pending_urbs[num_pending_urbs++] = (pending_urb_t){
-        .seqnum = seqnum,
-        .ep = ep,
-        .transfer_buffer_length = transfer_buffer_length,
-    };
+    pending_urb_t *urb = &pending_urbs[num_pending_urbs++];
+    urb->seqnum = seqnum;
+    urb->ep = ep;
+    urb->direction = direction;
+    urb->transfer_buffer_length = transfer_buffer_length;
+    urb->isochronous = false;
+    return true;
+}
+
+static bool process_iso_submit(const usbip_device_t *usb_device, uint32_t seqnum, uint32_t ep,
+                               uint32_t direction, const usbip_cmd_submit_t *cmd_submit,
+                               endpoint_t *endpoint) {
+    static usbip_iso_packet_descriptor_t descriptors[MAX_ISO_PACKETS];
+    static pending_urb_t urb;
+    uint32_t number_of_packets = SWAP32(cmd_submit->number_of_packets);
+
+    if (number_of_packets > MAX_ISO_PACKETS) {
+        fprintf(stderr,
+                "USBIPProtocol: %u isochronous packets in one transfer, at most %u supported\n",
+                number_of_packets, MAX_ISO_PACKETS);
+        return false;
+    }
+    if (!tcpip_server_read(descriptors, number_of_packets * sizeof(descriptors[0]))) {
+        return false;
+    }
+
+    urb.seqnum = seqnum;
+    urb.ep = ep;
+    urb.direction = direction;
+    urb.transfer_buffer_length = SWAP32(cmd_submit->transfer_buffer_length);
+    urb.isochronous = true;
+    urb.start_frame = SWAP32(cmd_submit->start_frame);
+    urb.number_of_packets = number_of_packets;
+    for (uint32_t idx = 0; idx < number_of_packets; idx++) {
+        urb.packets[idx].offset = SWAP32(descriptors[idx].offset);
+        urb.packets[idx].length = SWAP32(descriptors[idx].length);
+        /* Packets are read from and written to the transfer buffer at these positions */
+        if ((uint64_t)urb.packets[idx].offset + urb.packets[idx].length >
+            urb.transfer_buffer_length) {
+            fprintf(stderr, "USBIPProtocol: Isochronous packet %u is outside the transfer buffer\n",
+                    idx);
+            return false;
+        }
+    }
+
+    if (direction == 0) {
+        for (uint32_t idx = 0; idx < number_of_packets; idx++) {
+            if ((urb.packets[idx].length > 0) && (usb_device->ep_data_callback != NULL)) {
+                usbip_device_receive(usb_device, ep, &rx_buffer[urb.packets[idx].offset],
+                                     urb.packets[idx].length);
+            }
+        }
+    }
+
+    /* A transfer takes one service interval per packet, and starts when the previous transfer on
+       the endpoint ends, so a stream keeps the endpoint's real-time pace */
+    uint64_t now = now_us();
+    uint64_t start = (endpoint->stream_end_us > now) ? endpoint->stream_end_us : now;
+    urb.complete_us = start + (number_of_packets * endpoint->interval_us);
+    endpoint->stream_end_us = urb.complete_us;
+
+    if (num_pending_urbs == MAX_PENDING_URBS) {
+        fprintf(stderr, "USBIPProtocol: Too many pending transfers, completing %u now\n", seqnum);
+        return transmit_iso_ret_submit(usb_device, &urb);
+    }
+    pending_urbs[num_pending_urbs++] = urb;
     return true;
 }
 
@@ -245,8 +331,16 @@ static bool process_unlink(uint32_t seqnum) {
     uint32_t unlink_seqnum = SWAP32(cmd_unlink.unlink_seqnum);
     for (size_t idx = 0; idx < num_pending_urbs; idx++) {
         if (pending_urbs[idx].seqnum == unlink_seqnum) {
+            uint32_t ep = pending_urbs[idx].ep;
+            uint32_t direction = pending_urbs[idx].direction;
+            bool isochronous = pending_urbs[idx].isochronous;
             remove_pending_urb(idx);
             unlink_status = URB_UNLINKED;
+            /* A stream that was stopped starts over without waiting for its cancelled transfers */
+            if (isochronous && !has_pending_iso_urbs(ep, direction)) {
+                endpoints[(direction != 0) ? 1 : 0][ep & USB_ENDPOINT_NUMBER_MASK].stream_end_us =
+                    0;
+            }
             break;
         }
     }
@@ -267,34 +361,49 @@ static bool process_unlink(uint32_t seqnum) {
     return status;
 }
 
-static bool complete_pending_urbs(void) {
+static bool complete_pending_urbs(const usbip_device_t *usb_device) {
     bool status = true;
     uint64_t now = now_us();
     size_t idx = 0;
     wait_timeout_us = WAIT_TIMEOUT_US;
     /* Oldest first, so data reaches the host in the order the transfers were queued */
     while (status && (idx < num_pending_urbs)) {
-        pending_urb_t urb = pending_urbs[idx];
-        endpoint_t *endpoint = &endpoints[1][urb.ep & USB_ENDPOINT_NUMBER_MASK];
-        size_t tx_length = 0;
-        if (now < endpoint->next_poll_us) {
+        pending_urb_t *urb = &pending_urbs[idx];
+        endpoint_t *endpoint = &endpoints[1][urb->ep & USB_ENDPOINT_NUMBER_MASK];
+        uint64_t due_us = urb->isochronous ? urb->complete_us : endpoint->next_poll_us;
+        if (now < due_us) {
             /* Not polled yet, make sure to wake up when it is */
-            uint64_t time_left = endpoint->next_poll_us - now;
-            if (time_left < wait_timeout_us) {
-                wait_timeout_us = time_left;
+            if ((due_us - now) < wait_timeout_us) {
+                wait_timeout_us = due_us - now;
             }
-        } else {
-            tx_length = usbip_device_fetch_ep_data(urb.ep, tx_buffer, urb.transfer_buffer_length);
-        }
-        if (tx_length > 0) {
-            endpoint->next_poll_us = now + endpoint->interval_us;
-            remove_pending_urb(idx);
-            status = transmit_ret_submit(urb.seqnum, 0, tx_length, true);
-        } else {
             idx++;
+        } else if (urb->isochronous) {
+            status = transmit_iso_ret_submit(usb_device, urb);
+            remove_pending_urb(idx);
+        } else {
+            size_t tx_length =
+                usbip_device_fetch_ep_data(urb->ep, tx_buffer, urb->transfer_buffer_length);
+            if (tx_length > 0) {
+                uint32_t seqnum = urb->seqnum;
+                endpoint->next_poll_us = now + endpoint->interval_us;
+                remove_pending_urb(idx);
+                status = transmit_ret_submit(seqnum, 0, tx_length, true);
+            } else {
+                idx++;
+            }
         }
     }
     return status;
+}
+
+static bool has_pending_iso_urbs(uint32_t ep, uint32_t direction) {
+    for (size_t idx = 0; idx < num_pending_urbs; idx++) {
+        if (pending_urbs[idx].isochronous && (pending_urbs[idx].ep == ep) &&
+            (pending_urbs[idx].direction == direction)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 static void load_endpoints(const uint8_t *config_desc) {
@@ -308,7 +417,9 @@ static void load_endpoints(const uint8_t *config_desc) {
             bool in = ((desc[2] & USB_DIR_IN) != 0);
             endpoint_t *endpoint = &endpoints[in ? 1 : 0][desc[2] & USB_ENDPOINT_NUMBER_MASK];
             endpoint->type = desc[3] & USB_ENDPOINT_XFERTYPE_MASK;
-            if (in && (endpoint->type == USB_ENDPOINT_XFER_INT) && (desc[6] > 0)) {
+            bool paced = (endpoint->type == USB_ENDPOINT_XFER_ISOC) ||
+                         (in && (endpoint->type == USB_ENDPOINT_XFER_INT));
+            if (paced && (desc[6] > 0)) {
                 /* The device is reported as high speed, interval is 2^(bInterval - 1) * 125 us */
                 uint8_t exponent = (desc[6] > 16) ? 16 : desc[6];
                 endpoint->interval_us = (uint64_t)125 << (exponent - 1);
@@ -353,6 +464,52 @@ static bool transmit_ret_submit(uint32_t seqnum, int32_t urb_status, size_t actu
 
     if (status && send_data && (actual_length > 0)) {
         status = tcpip_server_write(tx_buffer, actual_length);
+    }
+    return status;
+}
+
+/* IN packets are sent back to back without the gaps between them, followed by the packet
+   descriptors, OUT transfers only report how much of each packet was accepted */
+static bool transmit_iso_ret_submit(const usbip_device_t *usb_device, const pending_urb_t *urb) {
+    static usbip_iso_packet_descriptor_t descriptors[MAX_ISO_PACKETS];
+    size_t total_length = 0;
+
+    for (uint32_t idx = 0; idx < urb->number_of_packets; idx++) {
+        size_t actual_length = urb->packets[idx].length;
+        if (urb->direction != 0) {
+            size_t space = urb->transfer_buffer_length - total_length;
+            size_t max_length = (actual_length < space) ? actual_length : space;
+            actual_length =
+                usbip_device_iso_in(usb_device, urb->ep, &tx_buffer[total_length], max_length);
+        }
+        total_length += actual_length;
+        descriptors[idx].offset = SWAP32(urb->packets[idx].offset);
+        descriptors[idx].length = SWAP32(urb->packets[idx].length);
+        descriptors[idx].actual_length = SWAP32((uint32_t)actual_length);
+        descriptors[idx].status = SWAP32(0);
+    }
+
+    usbip_header_basic_t ret_header = {0};
+    ret_header.command = SWAP32(USBIP_RET_SUBMIT);
+    ret_header.seqnum = SWAP32(urb->seqnum);
+    bool status = tcpip_server_write(&ret_header, sizeof(ret_header));
+
+    if (status) {
+        usbip_ret_submit_t ret_submit = {0};
+        ret_submit.status = SWAP32(0);
+        ret_submit.actual_length = SWAP32((uint32_t)total_length);
+        ret_submit.start_frame = SWAP32(urb->start_frame);
+        ret_submit.number_of_packets = SWAP32(urb->number_of_packets);
+        ret_submit.error_count = SWAP32(0);
+        status = tcpip_server_write(&ret_submit, sizeof(ret_submit));
+    }
+
+    if (status && (urb->direction != 0) && (total_length > 0)) {
+        status = tcpip_server_write(tx_buffer, total_length);
+    }
+
+    if (status && (urb->number_of_packets > 0)) {
+        status = tcpip_server_write(descriptors, urb->number_of_packets * sizeof(descriptors[0]));
     }
     return status;
 }

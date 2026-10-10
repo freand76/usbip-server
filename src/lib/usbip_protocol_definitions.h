@@ -96,6 +96,13 @@ typedef struct {
 } __attribute__((packed)) usbip_ret_submit_t;
 
 typedef struct {
+        uint32_t offset;
+        uint32_t length;
+        uint32_t actual_length;
+        uint32_t status;
+} __attribute__((packed)) usbip_iso_packet_descriptor_t;
+
+typedef struct {
         uint32_t unlink_seqnum;
         uint8_t padding[24];
 } __attribute__((packed)) usbip_cmd_unlink_t;
