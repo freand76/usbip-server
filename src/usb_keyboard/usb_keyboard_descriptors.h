@@ -45,7 +45,7 @@ static const uint8_t usb_keyboard_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
     0x00,            // bDeviceClass (use class information in the interface descriptors)
     0x00,            // bDeviceSubClass
     0x00,            // bDeviceProtocol
-    8,               // bMaxPacketSize
+    64,              // bMaxPacketSize
     LOBYTE(USB_VID), // idVendor
     HIBYTE(USB_VID),
     LOBYTE(USB_PID), // idProduct
