@@ -45,6 +45,12 @@ for idx in range(0, 5):
 
 time.sleep(0.5)
 
-# read data from USB device
-while response := bytearray(epIn.read(64)):
+# read data from USB device until it has nothing more to say, a read only returns when
+# the device has sent data, so silence shows up as a timeout
+READ_TIMEOUT_MS = 2000
+while True:
+    try:
+        response = bytearray(epIn.read(64, timeout=READ_TIMEOUT_MS))
+    except usb.core.USBTimeoutError:
+        break
     print(f"RX: '{response.decode('utf-8')}'")
