@@ -7,7 +7,7 @@ import usb.core
 import usb.util
 
 # find our device
-dev = usb.core.find(idVendor=0x00FA, idProduct=0xC001)
+dev = usb.core.find(idVendor=0xFA00, idProduct=0xC001)
 
 # was it found?
 if dev is None:

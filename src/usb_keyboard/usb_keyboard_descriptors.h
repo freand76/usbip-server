@@ -34,7 +34,7 @@ static const usb_string_t usb_strings[] = {
 // Device Descriptor
 //
 
-#define USB_VID 0xfafa
+#define USB_VID 0xfa00
 #define USB_PID 0x0003
 
 static const uint8_t usb_keyboard_device[USB_DEVICE_DESCRIPTOR_LENGTH] = {
