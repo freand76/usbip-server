@@ -221,9 +221,10 @@ static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, ui
             usbip_device_control(usb_device, cmd_submit.setup, rx_buffer, transfer_buffer_length);
         size_t tx_length = 0;
         if (direction == 1) {
-            tx_length = usbip_device_fetch_ep_data(0, tx_buffer, transfer_buffer_length);
-            /* A device that has no data for an IN request stalls it */
-            if ((transfer_buffer_length > 0) && (tx_length == 0)) {
+            bool answered =
+                usbip_device_fetch_control_reply(tx_buffer, transfer_buffer_length, &tx_length);
+            /* A device that does not answer an IN request stalls it, an empty answer is valid */
+            if ((transfer_buffer_length > 0) && !answered) {
                 supported = false;
             }
         }

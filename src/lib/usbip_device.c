@@ -51,6 +51,8 @@ static bool device_stopped = false;
 static device_endpoint_data_t endpoint_data[NUMBER_OF_ENDPOINTS];
 static int ep_data_event_fd = -1;
 static uint8_t configuration_value = 0;
+/* Whether the current control request was answered, an answer may be empty */
+static bool control_answered = false;
 /* Counts resets, so data transmitted before a reset never reaches the next host */
 static uint32_t reset_generation = 0;
 
@@ -81,6 +83,7 @@ void usbip_device_reset(const usbip_device_t *usb_device) {
         endpoint_data[idx].data_length = 0;
     }
     configuration_value = 0;
+    control_answered = false;
     reset_generation++;
     pthread_cond_broadcast(&ep_data_consumed);
     pthread_mutex_unlock(&ep_access_mutex);
@@ -145,8 +148,13 @@ bool usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length) 
     bool stopped = device_stopped;
     bool was_reset = (generation != reset_generation);
     if (!stopped && !was_reset && (replace || (endpoint_data[ep_masked].data_length == 0))) {
-        memcpy(endpoint_data[ep_masked].data, data, data_length);
+        if (data_length > 0) {
+            memcpy(endpoint_data[ep_masked].data, data, data_length);
+        }
         endpoint_data[ep_masked].data_length = data_length;
+        if (ep_masked == 0) {
+            control_answered = true;
+        }
         stored = true;
     }
     pthread_mutex_unlock(&ep_access_mutex);
@@ -189,6 +197,15 @@ void usbip_device_clear_event(void) {
     }
 }
 
+bool usbip_device_fetch_control_reply(uint8_t *buffer, size_t max_length, size_t *length) {
+    pthread_mutex_lock(&ep_access_mutex);
+    bool answered = control_answered;
+    control_answered = false;
+    pthread_mutex_unlock(&ep_access_mutex);
+    *length = usbip_device_fetch_ep_data(0, buffer, max_length);
+    return answered;
+}
+
 size_t usbip_device_fetch_ep_data(uint8_t ep, uint8_t *buffer, size_t max_length) {
     uint8_t ep_masked = ep & 0xf;
     pthread_mutex_lock(&ep_access_mutex);
@@ -211,6 +228,12 @@ size_t usbip_device_fetch_ep_data(uint8_t ep, uint8_t *buffer, size_t max_length
 
 bool usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
                           size_t length) {
+    /* Only an answer given to this request may reply to it */
+    pthread_mutex_lock(&ep_access_mutex);
+    endpoint_data[0].data_length = 0;
+    control_answered = false;
+    pthread_mutex_unlock(&ep_access_mutex);
+
     uint8_t bmRequestType = setup[0];
     uint8_t bfType = (bmRequestType >> 5) & 0x03;
     uint8_t bfRecipient = bmRequestType & 0x1f;

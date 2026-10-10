@@ -77,6 +77,9 @@ typedef struct {
  * critical sections it can not wait, and drops the data if the endpoint still has unread data.
  * Data still waiting when the device is reset is dropped as well.
  *
+ * On endpoint 0 it answers the current control IN request, data_length 0 (data may be NULL)
+ * is a valid empty answer. A control IN request that gets no answer is stalled.
+ *
  * @return true if the data was queued for the host
  */
 bool usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length);

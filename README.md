@@ -362,9 +362,9 @@ int main(void) {
 - **The control callback** receives class, vendor and standard interface requests (for
   example HID `GET_DESCRIPTOR` of the report descriptor). It also receives
   `SET_CONFIGURATION` after the library has handled it, which is the moment the device
-  is ready to be used. Answer an IN request with `usbip_device_transmit(0, ...)`;
-  an IN request that gets no answer is stalled, the way a real device rejects a
-  request it does not support.
+  is ready to be used. Answer an IN request with `usbip_device_transmit(0, ...)`,
+  `usbip_device_transmit(0, NULL, 0)` is a valid empty answer. An IN request that gets
+  no answer is stalled, the way a real device rejects a request it does not support.
 - **`usbip_device_transmit()`** hands data for an IN endpoint to the host, at most 512
   bytes at a time. It waits until the host has fetched earlier data on that endpoint,
   just as firmware waits for an endpoint buffer to become free. Data that does not fit
