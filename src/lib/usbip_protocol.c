@@ -241,9 +241,12 @@ static bool transmit_device_id(void) {
 
 static bool transmit_device(const usbip_device_t *usb_device) {
     usbip_device_descriptor_t device = {0};
-    memcpy(&device.idVendor, &usb_device->device_desc[8], sizeof(uint16_t));
-    memcpy(&device.idProduct, &usb_device->device_desc[10], sizeof(uint16_t));
-    memcpy(&device.bcdDevice, &usb_device->device_desc[12], sizeof(uint16_t));
+    device.idVendor =
+        SWAP16((uint16_t)((usb_device->device_desc[9] << 8) | usb_device->device_desc[8]));
+    device.idProduct =
+        SWAP16((uint16_t)((usb_device->device_desc[11] << 8) | usb_device->device_desc[10]));
+    device.bcdDevice =
+        SWAP16((uint16_t)((usb_device->device_desc[13] << 8) | usb_device->device_desc[12]));
     memcpy(&device.bDeviceClass, &usb_device->device_desc[4], sizeof(uint8_t));
     memcpy(&device.bDeviceSubClass, &usb_device->device_desc[5], sizeof(uint8_t));
     memcpy(&device.bDeviceProtocol, &usb_device->device_desc[6], sizeof(uint8_t));
