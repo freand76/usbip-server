@@ -171,7 +171,7 @@ bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
 
             usbip_header_basic_t ret_header = {0};
             ret_header.command = SWAP32(USBIP_RET_UNLINK);
-            ret_header.seqnum = cmd_unlink.unlink_seqnum;
+            ret_header.seqnum = cmd_header.seqnum;
             ret_header.devid = SWAP32(0);
             ret_header.direction = SWAP32(0);
             ret_header.ep = SWAP32(0);
