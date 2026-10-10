@@ -97,7 +97,7 @@ bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
                 num_pending_urbs = 0;
                 wait_timeout_us = WAIT_TIMEOUT_US;
                 load_interrupt_intervals(usb_device->config_desc);
-                usbip_device_reset();
+                usbip_device_reset(usb_device);
                 device_imported = transmit_import_response(usb_device);
             }
             break;
@@ -133,6 +133,7 @@ bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
         printf("USBIPProtocol: Lost connection :-(\n");
         device_imported = false;
         num_pending_urbs = 0;
+        usbip_device_reset(usb_device);
     }
 
     // Return true for disconnect

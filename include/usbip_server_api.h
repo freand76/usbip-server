@@ -30,6 +30,14 @@ typedef void(control_data_func_t)(const uint8_t *setup, const uint8_t *data, siz
 typedef void(endpoint_data_func_t)(uint8_t ep, const uint8_t *data, size_t data_length);
 
 /**
+ * @brief Callback function type for USB reset
+ *
+ * Called when a host attaches the device and when it disconnects, like a bus reset or a
+ * cable being pulled on real hardware. Data transmitted before the reset is discarded.
+ */
+typedef void(reset_func_t)(void);
+
+/**
  * @brief USB String type used to connect string id with text
  */
 typedef struct {
@@ -47,6 +55,7 @@ typedef struct {
         const usb_string_t *usb_strings;
         control_data_func_t *control_data_callback;
         endpoint_data_func_t *ep_data_callback;
+        reset_func_t *reset_callback; /* Optional */
 } usbip_device_t;
 
 /**
@@ -54,6 +63,7 @@ typedef struct {
  *
  * Waits until the host has fetched earlier data on the endpoint. In device callbacks and
  * critical sections it can not wait, and drops the data if the endpoint still has unread data.
+ * Data still waiting when the device is reset is dropped as well.
  *
  * @return true if the data was queued for the host
  */

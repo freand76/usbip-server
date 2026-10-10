@@ -27,7 +27,7 @@ bool usbip_device_init(void);
 void usbip_device_mark_server_thread(void);
 
 /* Return to the state of a freshly attached device, like a USB bus reset */
-void usbip_device_reset(void);
+void usbip_device_reset(const usbip_device_t *usb_device);
 
 void usbip_device_stop(void);
 

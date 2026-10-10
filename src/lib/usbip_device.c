@@ -49,6 +49,8 @@ static bool device_stopped = false;
 static device_endpoint_data_t endpoint_data[NUMBER_OF_ENDPOINTS];
 static int ep_data_event_fd = -1;
 static uint8_t configuration_value = 0;
+/* Counts resets, so data transmitted before a reset never reaches the next host */
+static uint32_t reset_generation = 0;
 
 /* The server thread fetches endpoint data, so neither it (where all device callbacks run) nor a
    thread blocking it with a critical section may wait for the data to be fetched */
@@ -69,15 +71,22 @@ bool usbip_device_init(void) {
     return (ep_data_event_fd >= 0);
 }
 
-void usbip_device_reset(void) {
+void usbip_device_reset(const usbip_device_t *usb_device) {
     pthread_mutex_lock(&ep_access_mutex);
     for (size_t idx = 0; idx < NUMBER_OF_ENDPOINTS; idx++) {
         endpoint_data[idx].data_length = 0;
     }
     configuration_value = 0;
+    reset_generation++;
     pthread_cond_broadcast(&ep_data_consumed);
     pthread_mutex_unlock(&ep_access_mutex);
     usbip_device_clear_event();
+
+    if (usb_device->reset_callback != NULL) {
+        pthread_mutex_lock(&receive_lock);
+        usb_device->reset_callback();
+        pthread_mutex_unlock(&receive_lock);
+    }
 }
 
 void usbip_device_stop(void) {
@@ -113,19 +122,21 @@ bool usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length) 
     bool stored = false;
 
     pthread_mutex_lock(&ep_access_mutex);
+    uint32_t generation = reset_generation;
     /* Wait for the host to fetch earlier data */
     while (!replace && may_wait && !device_stopped && (endpoint_data[ep_masked].data_length > 0)) {
         pthread_cond_wait(&ep_data_consumed, &ep_access_mutex);
     }
     bool stopped = device_stopped;
-    if (!stopped && (replace || (endpoint_data[ep_masked].data_length == 0))) {
+    bool was_reset = (generation != reset_generation);
+    if (!stopped && !was_reset && (replace || (endpoint_data[ep_masked].data_length == 0))) {
         memcpy(endpoint_data[ep_masked].data, data, data_length);
         endpoint_data[ep_masked].data_length = data_length;
         stored = true;
     }
     pthread_mutex_unlock(&ep_access_mutex);
 
-    if (!stored && !stopped) {
+    if (!stored && !stopped && !was_reset) {
         fprintf(stderr,
                 "USBIPDevice: EP%u still has unread data, dropped %zu bytes "
                 "(transmit can not wait in a callback or critical section)\n",
