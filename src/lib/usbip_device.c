@@ -29,6 +29,10 @@
 
 #define USB_REQUEST_TYPE_STANDARD (0)
 
+#define USB_TRANSFER_TYPE_BULK (2)
+#define USB_TRANSFER_TYPE_INTERRUPT (3)
+#define FULL_SPEED_MAX_PACKET_SIZE (64)
+
 #define USB_REQUEST_RECIPIENT_DEVICE (0)
 #define USB_REQUEST_RECIPIENT_INTERFACE (1)
 #define USB_REQUEST_RECIPIENT_ENDPOINT (2)
@@ -50,6 +54,8 @@ static const char *get_string(const usbip_device_t *usb_device, uint8_t index);
 static bool device_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
                            size_t req_size);
 static bool endpoint_request(uint8_t *usb_setup);
+static size_t build_other_speed_config(const uint8_t *config_desc, uint8_t *buffer,
+                                       size_t buffer_length);
 static void interface_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
                               size_t req_size);
 
@@ -231,6 +237,13 @@ static bool device_request(const usbip_device_t *usb_device, uint8_t *setup, uin
                 size_t tx_length =
                     (req_size < sizeof(qualifier_desc)) ? req_size : sizeof(qualifier_desc);
                 usbip_device_transmit(0, qualifier_desc, tx_length);
+            } else if ((bDescriptorType == USB_DESCRIPTOR_TYPE_OTHER_SPEED_CONFIGURATION) &&
+                       (usb_device->device_desc[3] >= 0x02)) {
+                uint8_t other_speed_desc[ENDPOINT_MAX_DATA_LENGTH];
+                size_t desc_length = build_other_speed_config(
+                    usb_device->config_desc, other_speed_desc, sizeof(other_speed_desc));
+                size_t tx_length = (req_size < desc_length) ? req_size : desc_length;
+                usbip_device_transmit(0, other_speed_desc, tx_length);
             } else if (bDescriptorType == USB_DESCRIPTOR_TYPE_STRING) {
                 if (bDescriptorIndex == 0) {
                     size_t tx_length = (req_size < usb_device->langid_desc[0])
@@ -272,6 +285,40 @@ static bool device_request(const usbip_device_t *usb_device, uint8_t *setup, uin
         supported = false;
     }
     return supported;
+}
+
+/* The configuration as seen by a full speed host, the device runs at high speed */
+static size_t build_other_speed_config(const uint8_t *config_desc, uint8_t *buffer,
+                                       size_t buffer_length) {
+    size_t total_length = (config_desc[3] << 8) | config_desc[2];
+    if (total_length > buffer_length) {
+        total_length = buffer_length;
+    }
+    memcpy(buffer, config_desc, total_length);
+    buffer[1] = USB_DESCRIPTOR_TYPE_OTHER_SPEED_CONFIGURATION;
+
+    size_t idx = 0;
+    while ((idx + 7 <= total_length) && (buffer[idx] > 0)) {
+        uint8_t *desc = &buffer[idx];
+        uint8_t transfer_type = desc[3] & 0x03;
+        if ((desc[1] == USB_DESCRIPTOR_TYPE_ENDPOINT) &&
+            ((transfer_type == USB_TRANSFER_TYPE_BULK) ||
+             (transfer_type == USB_TRANSFER_TYPE_INTERRUPT))) {
+            /* Full speed bulk and interrupt packets are at most 64 bytes */
+            if (((desc[5] << 8) | desc[4]) > FULL_SPEED_MAX_PACKET_SIZE) {
+                desc[4] = FULL_SPEED_MAX_PACKET_SIZE;
+                desc[5] = 0;
+            }
+            /* High speed interval is 2^(bInterval - 1) * 125 us, full speed is in ms */
+            if ((transfer_type == USB_TRANSFER_TYPE_INTERRUPT) && (desc[6] > 0)) {
+                uint8_t exponent = (desc[6] > 16) ? 16 : desc[6];
+                size_t interval_ms = ((size_t)1 << (exponent - 1)) / 8;
+                desc[6] = (interval_ms < 1) ? 1 : (interval_ms > 255) ? 255 : interval_ms;
+            }
+        }
+        idx += desc[0];
+    }
+    return total_length;
 }
 
 static bool endpoint_request(uint8_t *setup) {
