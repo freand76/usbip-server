@@ -133,92 +133,23 @@ $ make check-python  # check formatting and lint of tools/ with ruff (needs uv)
 
 ## Example Devices
 
+Each example has its own page with detailed instructions: how to try it, what it prints,
+how its code works and what to change for your own device.
+
 | Program | ID | What it does |
 |---|---|---|
-| `out/usb_bulk_device` | `fa00:c001` | Vendor class device with one bulk OUT and one bulk IN endpoint. Prints everything it receives and answers with `Message Counter: <n>`. |
-| `out/usb_cdc_device` | `fa00:0001` | CDC ACM serial port, shows up as `/dev/ttyACMx`. Sends `Tick <n>` twice a second while a terminal has the port open, and prints what you type. |
-| `out/usb_mouse_device` | `fa00:0002` | HID boot mouse that moves the pointer in a circle, one lap per second. |
-| `out/usb_keyboard_device` | `fa00:0003` | HID boot keyboard that types `Who is typing...` one second after the host has configured it. |
-| `out/usb_audio_input_device` | `fa00:0004` | USB Audio Class 1 microphone, 48 kHz 16 bit mono over an isochronous endpoint. While something records from it, it plays an alien pulse once a second: a warbling chirp sweeping from 220 Hz to 1760 Hz. |
-| `out/usb_gud_display_device` | `1d50:614d` | 320x240 RGB565 display using the [GUD (Generic USB Display)](https://github.com/notro/gud/wiki) protocol, shows up as a monitor. A window shows what the host draws on it. |
+| [`out/usb_bulk_device`](docs/usb_bulk_device.md) | `fa00:c001` | Vendor class device with one bulk OUT and one bulk IN endpoint. Prints everything it receives and answers with `Message Counter: <n>`. |
+| [`out/usb_cdc_device`](docs/usb_cdc_device.md) | `fa00:0001` | CDC ACM serial port, shows up as `/dev/ttyACMx`. Sends `Tick <n>` twice a second while a terminal has the port open, and prints what you type. |
+| [`out/usb_mouse_device`](docs/usb_mouse_device.md) | `fa00:0002` | HID boot mouse that moves the pointer in a circle, one lap per second. |
+| [`out/usb_keyboard_device`](docs/usb_keyboard_device.md) | `fa00:0003` | HID boot keyboard that types `Who is typing...` one second after the host has configured it. |
+| [`out/usb_audio_input_device`](docs/usb_audio_input_device.md) | `fa00:0004` | USB Audio Class 1 microphone, 48 kHz 16 bit mono over an isochronous endpoint. While something records from it, it plays an alien pulse once a second. |
+| [`out/usb_gud_display_device`](docs/usb_gud_display_device.md) | `1d50:614d` | 320x240 RGB565 display using the GUD (Generic USB Display) protocol, shows up as a monitor. A window shows what the host draws on it. |
 
 *The mouse moves your real pointer and the keyboard types into whichever window has
 focus.*
 
-To try the bulk device, attach it and run [tools/test_bulkio.py](tools/test_bulkio.py)
-with [uv](https://docs.astral.sh/uv/), which installs the script's Python dependencies by
-itself. The script needs access to the device node, see
-[Accessing the Devices Without root](#accessing-the-devices-without-root):
-
-```
-$ out/usb_bulk_device &
-$ sudo usbip attach -r localhost -b 1-1
-$ uv run tools/test_bulkio.py
-```
-
-To hear the audio input device, attach it and record from it. It shows up as the ALSA
-card `Input` (check with `arecord -l`) and as the microphone "Virtual Audio Input" in the
-desktop sound settings:
-
-```
-$ out/usb_audio_input_device &
-$ sudo usbip attach -r localhost -b 1-1
-$ arecord -D plughw:CARD=Input -f S16_LE -r 48000 -c 1 -d 5 alien.wav
-$ aplay alien.wav
-```
-
-Or play it live on the speakers with [tools/audio_loopback.py](tools/audio_loopback.py),
-which works with both PulseAudio and PipeWire. Start it before or after attaching the
-device; it plays the input until Ctrl-C, stops when the device is detached and starts
-again when it is attached:
-
-```
-$ tools/audio_loopback.py
-$ tools/audio_loopback.py --list                     # inputs and outputs
-$ tools/audio_loopback.py --source Mic1 --sink Speaker --latency-ms 50
-```
-
-The default latency is 30 ms. Much lower latencies make the sound break up: the audio
-arrives in 1 ms packets with some USB/IP delay on top, and the sound server runs out of
-samples between them.
-
-It is a class compliant device, so the Linux audio driver needs no special vendor or
-product id. When recording starts the kernel logs `usb usbN: Not yet implemented`: the
-virtual host controller does not implement frame numbers, which the audio driver asks
-for, and the message is harmless.
-
-The display device is built separately with `make gud_display`, since its window needs
-SDL3 (`sudo apt install libsdl3-dev`). On the host it needs the `gud` kernel module, part
-of Linux since 5.13. The driver only binds to a few fixed ids, so the device uses the
-original GUD vendor and product id instead of `fa00`. Once attached it is a real
-monitor: the desktop may extend onto it, it appears under `/sys/class/drm`, and the
-device's window shows what is drawn on it. The display reports its connector as
-connected a few seconds after attaching, the way a monitor powers up, so the desktop
-picks it up about 10 seconds after the attach. Without a desktop the device runs without a
-window. `modetest` (`sudo apt install libdrm-tests`) draws a test pattern on it:
-
-```
-$ make gud_display
-$ out/usb_gud_display_device &
-$ sudo usbip attach -r localhost -b 1-1
-$ modetest -M gud -c                            # find the connector id, for example 38
-$ modetest -M gud -s 38:320x240@RG16            # test pattern until Enter is pressed
-```
-
-Resolution, pixel formats and buffer size are set at the top of
-[usb_gud_display_descriptors.h](src/usb_gud_display/usb_gud_display_descriptors.h).
-
-*On GNOME, attaching the display again after it was detached crashes GNOME Shell:
-mutter never forgets a display that was unplugged. Either log out and in after
-detaching it, or keep GNOME away from GUD displays with the udev rule in
-[udev/71-gud-mutter-ignore.rules](udev/71-gud-mutter-ignore.rules), installed before
-the display is attached for the first time in a session. The desktop then does not use
-the display, and it can be attached and detached freely:*
-
-```
-$ sudo install -m 644 udev/71-gud-mutter-ignore.rules /etc/udev/rules.d/
-$ sudo udevadm control --reload-rules
-```
+*The display is built separately with `make gud_display` and needs SDL3. On GNOME,
+read its page before attaching it a second time in a session.*
 
 ## Attaching and Detaching
 
