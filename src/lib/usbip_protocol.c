@@ -29,8 +29,19 @@
 #define USBIP_MAX_PACKET_SIZE (4096)
 #define USBIP_PROTOCOL_VERSION (0x0111)
 #define EP_STALL (-32)
+#define URB_UNLINKED (-104) /* -ECONNRESET */
+#define MAX_PENDING_URBS (32)
+
+typedef struct {
+        uint32_t seqnum;
+        uint32_t ep;
+        uint32_t transfer_buffer_length;
+} pending_urb_t;
 
 static bool device_imported = false;
+
+static pending_urb_t pending_urbs[MAX_PENDING_URBS];
+static size_t num_pending_urbs = 0;
 
 static uint8_t rx_buffer[USBIP_MAX_PACKET_SIZE];
 static uint8_t tx_buffer[USBIP_MAX_PACKET_SIZE];
@@ -42,6 +53,13 @@ static bool transmit_device_id(void);
 static bool transmit_device(const usbip_device_t *usb_device);
 static bool transmit_devlist_response(const usbip_device_t *usb_device);
 static bool transmit_import_response(const usbip_device_t *usb_device);
+static bool process_imported_cmd(const usbip_device_t *usb_device);
+static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, uint32_t ep,
+                           uint32_t direction);
+static bool process_unlink(uint32_t seqnum);
+static bool complete_pending_urbs(void);
+static void remove_pending_urb(size_t idx);
+static bool transmit_ret_submit(uint32_t seqnum, size_t tx_length);
 
 bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
     op_req_head_t req_head;
@@ -63,6 +81,7 @@ bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
             status = tcpip_server_read(busid_str, sizeof(busid_str));
             if (status) {
                 printf("USBIPProtocol: USBIP_CMD_REQ_DEV_IMPORT '%s'\n", busid_str);
+                num_pending_urbs = 0;
                 device_imported = transmit_import_response(usb_device);
             }
             break;
@@ -82,116 +101,22 @@ bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
 }
 
 bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
-    usbip_header_basic_t cmd_header;
-    uint32_t ret_status = 0;
+    bool status = true;
 
-    bool status = tcpip_server_read(&cmd_header, sizeof(cmd_header));
+    if (tcpip_server_wait_for_data(usbip_device_get_event_fd())) {
+        status = process_imported_cmd(usb_device);
+    }
 
+    /* Clear before completing, data transmitted after this wakes the next wait */
+    usbip_device_clear_event();
     if (status) {
-        uint32_t command = SWAP32(cmd_header.command);
-        if (command == USBIP_CMD_SUBMIT) {
-            /* SUBMIT */
-            usbip_cmd_submit_t cmd_submit;
-            status = tcpip_server_read(&cmd_submit, sizeof(cmd_submit));
-
-            uint32_t ep = SWAP32(cmd_header.ep);
-            uint32_t direction = SWAP32(cmd_header.direction);
-            uint32_t transfer_buffer_length = SWAP32(cmd_submit.transfer_buffer_length);
-
-            if (transfer_buffer_length > USBIP_MAX_PACKET_SIZE) {
-                fprintf(stderr,
-                        "USBIPProtocol: Transfer buffer length %u exceeds max packet size %u\n",
-                        transfer_buffer_length, USBIP_MAX_PACKET_SIZE);
-                status = false;
-            }
-
-            size_t tx_length = 0;
-            if (status && (direction == 0)) {
-                status = tcpip_server_read(rx_buffer, transfer_buffer_length);
-            }
-
-            if (status) {
-                if (ep == 0) {
-                    // Control
-                    usbip_device_control(usb_device, cmd_submit.setup, rx_buffer,
-                                         transfer_buffer_length);
-                } else {
-                    if ((direction == 0) && (transfer_buffer_length > 0) &&
-                        (usb_device->ep_data_callback != NULL)) {
-                        usbip_device_receive(usb_device, ep, rx_buffer, transfer_buffer_length);
-                    }
-                }
-
-                if (direction == 1) {
-                    uint8_t *ep_buf = usbip_device_get_ep_buffer(ep, &tx_length);
-                    if (tx_length > transfer_buffer_length) {
-                        tx_length = transfer_buffer_length;
-                    }
-                    if (tx_length > 0) {
-                        memcpy(tx_buffer, ep_buf, tx_length);
-                        if (ep == 0) {
-                            // Control transfer is complete, drop anything beyond wLength
-                            usbip_device_release_buffer(ep);
-                        } else {
-                            usbip_device_consume_buffer(ep, tx_length);
-                        }
-                    } else {
-                        // ret_status = EP_STALL;
-                    }
-                }
-
-                usbip_header_basic_t ret_header = {0};
-                ret_header.command = SWAP32(USBIP_RET_SUBMIT);
-                ret_header.seqnum = cmd_header.seqnum;
-                ret_header.devid = SWAP32(0);
-                ret_header.direction = SWAP32(0);
-                ret_header.ep = SWAP32(0);
-
-                status = tcpip_server_write(&ret_header, sizeof(ret_header));
-            }
-
-            if (status) {
-                usbip_ret_submit_t ret_submit = {0};
-                ret_submit.status = SWAP32(ret_status);
-                ret_submit.actual_length = SWAP32(tx_length);
-                ret_submit.start_frame = SWAP32(0);
-                ret_submit.number_of_packets = SWAP32(0xffffffff);
-                ret_submit.error_count = SWAP32(0);
-
-                status = tcpip_server_write(&ret_submit, sizeof(ret_submit));
-            }
-
-            if (status && (tx_length > 0)) {
-                status = tcpip_server_write(tx_buffer, tx_length);
-            }
-        } else if (command == USBIP_CMD_UNLINK) {
-            /* UNLINK */
-            usbip_cmd_unlink_t cmd_unlink;
-            status = tcpip_server_read(&cmd_unlink, sizeof(cmd_unlink));
-
-            usbip_header_basic_t ret_header = {0};
-            ret_header.command = SWAP32(USBIP_RET_UNLINK);
-            ret_header.seqnum = cmd_header.seqnum;
-            ret_header.devid = SWAP32(0);
-            ret_header.direction = SWAP32(0);
-            ret_header.ep = SWAP32(0);
-            if (status) {
-                status = tcpip_server_write(&ret_header, sizeof(ret_header));
-            }
-
-            usbip_ret_unlink_t ret_unlink = {0};
-            ret_unlink.status = SWAP32(0);
-            if (status) {
-                status = tcpip_server_write(&ret_unlink, sizeof(ret_unlink));
-            }
-        } else {
-            status = false;
-        }
+        status = complete_pending_urbs();
     }
 
     if (!status) {
         printf("USBIPProtocol: Lost connection :-(\n");
         device_imported = false;
+        num_pending_urbs = 0;
     }
 
     // Return true for disconnect
@@ -200,6 +125,159 @@ bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
 
 bool usbip_protocol_is_device_imported(void) {
     return device_imported;
+}
+
+static bool process_imported_cmd(const usbip_device_t *usb_device) {
+    usbip_header_basic_t cmd_header;
+    bool status = tcpip_server_read(&cmd_header, sizeof(cmd_header));
+
+    if (status) {
+        uint32_t command = SWAP32(cmd_header.command);
+        uint32_t seqnum = SWAP32(cmd_header.seqnum);
+        if (command == USBIP_CMD_SUBMIT) {
+            status = process_submit(usb_device, seqnum, SWAP32(cmd_header.ep),
+                                    SWAP32(cmd_header.direction));
+        } else if (command == USBIP_CMD_UNLINK) {
+            status = process_unlink(seqnum);
+        } else {
+            status = false;
+        }
+    }
+    return status;
+}
+
+static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, uint32_t ep,
+                           uint32_t direction) {
+    usbip_cmd_submit_t cmd_submit;
+    bool status = tcpip_server_read(&cmd_submit, sizeof(cmd_submit));
+    uint32_t transfer_buffer_length = SWAP32(cmd_submit.transfer_buffer_length);
+
+    if (status && (transfer_buffer_length > USBIP_MAX_PACKET_SIZE)) {
+        fprintf(stderr, "USBIPProtocol: Transfer buffer length %u exceeds max packet size %u\n",
+                transfer_buffer_length, USBIP_MAX_PACKET_SIZE);
+        status = false;
+    }
+
+    if (status && (direction == 0)) {
+        status = tcpip_server_read(rx_buffer, transfer_buffer_length);
+    }
+
+    if (!status) {
+        return false;
+    }
+
+    if (ep == 0) {
+        // Control
+        usbip_device_control(usb_device, cmd_submit.setup, rx_buffer, transfer_buffer_length);
+        size_t tx_length = 0;
+        if (direction == 1) {
+            tx_length = usbip_device_fetch_ep_data(0, tx_buffer, transfer_buffer_length);
+        }
+        return transmit_ret_submit(seqnum, tx_length);
+    }
+
+    if (direction == 0) {
+        if ((transfer_buffer_length > 0) && (usb_device->ep_data_callback != NULL)) {
+            usbip_device_receive(usb_device, ep, rx_buffer, transfer_buffer_length);
+        }
+        return transmit_ret_submit(seqnum, 0);
+    }
+
+    /* IN transfers stay pending until the device has data, like a NAK on a real bus */
+    if (num_pending_urbs == MAX_PENDING_URBS) {
+        fprintf(stderr, "USBIPProtocol: Too many pending transfers, completing %u without data\n",
+                seqnum);
+        return transmit_ret_submit(seqnum, 0);
+    }
+    pending_urbs[num_pending_urbs++] = (pending_urb_t){
+        .seqnum = seqnum,
+        .ep = ep,
+        .transfer_buffer_length = transfer_buffer_length,
+    };
+    return true;
+}
+
+static bool process_unlink(uint32_t seqnum) {
+    usbip_cmd_unlink_t cmd_unlink;
+    bool status = tcpip_server_read(&cmd_unlink, sizeof(cmd_unlink));
+    if (!status) {
+        return false;
+    }
+
+    /* A transfer that already completed can not be unlinked */
+    int32_t unlink_status = 0;
+    uint32_t unlink_seqnum = SWAP32(cmd_unlink.unlink_seqnum);
+    for (size_t idx = 0; idx < num_pending_urbs; idx++) {
+        if (pending_urbs[idx].seqnum == unlink_seqnum) {
+            remove_pending_urb(idx);
+            unlink_status = URB_UNLINKED;
+            break;
+        }
+    }
+
+    usbip_header_basic_t ret_header = {0};
+    ret_header.command = SWAP32(USBIP_RET_UNLINK);
+    ret_header.seqnum = SWAP32(seqnum);
+    ret_header.devid = SWAP32(0);
+    ret_header.direction = SWAP32(0);
+    ret_header.ep = SWAP32(0);
+    status = tcpip_server_write(&ret_header, sizeof(ret_header));
+
+    if (status) {
+        usbip_ret_unlink_t ret_unlink = {0};
+        ret_unlink.status = SWAP32((uint32_t)unlink_status);
+        status = tcpip_server_write(&ret_unlink, sizeof(ret_unlink));
+    }
+    return status;
+}
+
+static bool complete_pending_urbs(void) {
+    bool status = true;
+    size_t idx = 0;
+    /* Oldest first, so data reaches the host in the order the transfers were queued */
+    while (status && (idx < num_pending_urbs)) {
+        pending_urb_t urb = pending_urbs[idx];
+        size_t tx_length =
+            usbip_device_fetch_ep_data(urb.ep, tx_buffer, urb.transfer_buffer_length);
+        if (tx_length > 0) {
+            remove_pending_urb(idx);
+            status = transmit_ret_submit(urb.seqnum, tx_length);
+        } else {
+            idx++;
+        }
+    }
+    return status;
+}
+
+static void remove_pending_urb(size_t idx) {
+    num_pending_urbs--;
+    memmove(&pending_urbs[idx], &pending_urbs[idx + 1],
+            (num_pending_urbs - idx) * sizeof(pending_urbs[0]));
+}
+
+static bool transmit_ret_submit(uint32_t seqnum, size_t tx_length) {
+    usbip_header_basic_t ret_header = {0};
+    ret_header.command = SWAP32(USBIP_RET_SUBMIT);
+    ret_header.seqnum = SWAP32(seqnum);
+    ret_header.devid = SWAP32(0);
+    ret_header.direction = SWAP32(0);
+    ret_header.ep = SWAP32(0);
+    bool status = tcpip_server_write(&ret_header, sizeof(ret_header));
+
+    if (status) {
+        usbip_ret_submit_t ret_submit = {0};
+        ret_submit.status = SWAP32(0);
+        ret_submit.actual_length = SWAP32(tx_length);
+        ret_submit.start_frame = SWAP32(0);
+        ret_submit.number_of_packets = SWAP32(0xffffffff);
+        ret_submit.error_count = SWAP32(0);
+        status = tcpip_server_write(&ret_submit, sizeof(ret_submit));
+    }
+
+    if (status && (tx_length > 0)) {
+        status = tcpip_server_write(tx_buffer, tx_length);
+    }
+    return status;
 }
 
 static size_t get_next_interface_idx(const uint8_t *config_ptr, size_t start_idx) {

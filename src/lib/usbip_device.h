@@ -15,21 +15,25 @@
 #ifndef USBIP_DEVICE_H_
 #define USBIP_DEVICE_H_
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "usbip_server_api.h"
+
+bool usbip_device_init(void);
 
 void usbip_device_stop(void);
 
 void usbip_device_receive(const usbip_device_t *usb_device, uint8_t ep, uint8_t *data,
                           size_t data_length);
 
-uint8_t *usbip_device_get_ep_buffer(uint8_t ep, size_t *buffer_size);
+/* File descriptor that becomes readable when IN endpoint data is available */
+int usbip_device_get_event_fd(void);
 
-void usbip_device_release_buffer(uint8_t ep);
+void usbip_device_clear_event(void);
 
-void usbip_device_consume_buffer(uint8_t ep, size_t length);
+size_t usbip_device_fetch_ep_data(uint8_t ep, uint8_t *buffer, size_t max_length);
 
 void usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
                           size_t length);

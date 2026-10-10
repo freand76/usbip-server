@@ -18,11 +18,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
 
 #include "descriptor_utils.h"
 #include "usbip_device.h"
-
-pthread_mutex_t ep_access_mutex;
 
 #define NUMBER_OF_ENDPOINTS (16)
 #define ENDPOINT_MAX_DATA_LENGTH (512)
@@ -35,12 +35,14 @@ pthread_mutex_t ep_access_mutex;
 typedef struct {
         uint8_t data[ENDPOINT_MAX_DATA_LENGTH];
         size_t data_length;
-        pthread_mutex_t ep_lock;
 } device_endpoint_data_t;
 
-static pthread_mutex_t receive_lock;
+static pthread_mutex_t receive_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t ep_access_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t ep_data_consumed = PTHREAD_COND_INITIALIZER;
 static bool device_stopped = false;
 static device_endpoint_data_t endpoint_data[NUMBER_OF_ENDPOINTS];
+static int ep_data_event_fd = -1;
 
 static const char *get_string(const usbip_device_t *usb_device, uint8_t index);
 static void device_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
@@ -48,11 +50,19 @@ static void device_request(const usbip_device_t *usb_device, uint8_t *usb_setup,
 static void interface_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
                               size_t req_size);
 
+bool usbip_device_init(void) {
+    ep_data_event_fd = eventfd(0, EFD_NONBLOCK);
+    return (ep_data_event_fd >= 0);
+}
+
 void usbip_device_stop(void) {
+    pthread_mutex_lock(&ep_access_mutex);
     device_stopped = true;
     for (size_t idx = 0; idx < NUMBER_OF_ENDPOINTS; idx++) {
-        usbip_device_release_buffer(idx);
+        endpoint_data[idx].data_length = 0;
     }
+    pthread_cond_broadcast(&ep_data_consumed);
+    pthread_mutex_unlock(&ep_access_mutex);
 }
 
 void usbip_device_receive(const usbip_device_t *usb_device, uint8_t ep, uint8_t *data,
@@ -64,17 +74,31 @@ void usbip_device_receive(const usbip_device_t *usb_device, uint8_t ep, uint8_t 
 
 void usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length) {
     uint8_t ep_masked = ep & 0xf;
+    if (data_length > ENDPOINT_MAX_DATA_LENGTH) {
+        data_length = ENDPOINT_MAX_DATA_LENGTH;
+    }
+
+    pthread_mutex_lock(&ep_access_mutex);
+    /* Wait for the host to fetch earlier data, control replies are
+       produced by the server thread itself and must never wait */
+    while ((ep_masked != 0) && !device_stopped && (endpoint_data[ep_masked].data_length > 0)) {
+        pthread_cond_wait(&ep_data_consumed, &ep_access_mutex);
+    }
     if (!device_stopped) {
-        pthread_mutex_lock(&endpoint_data[ep_masked].ep_lock);
-        pthread_mutex_lock(&ep_access_mutex);
-        if (data_length > ENDPOINT_MAX_DATA_LENGTH) {
-            data_length = ENDPOINT_MAX_DATA_LENGTH;
-        }
         memcpy(endpoint_data[ep_masked].data, data, data_length);
         endpoint_data[ep_masked].data_length = data_length;
-        pthread_mutex_unlock(&ep_access_mutex);
+    }
+    pthread_mutex_unlock(&ep_access_mutex);
+
+    if (ep_masked != 0) {
+        /* Wake the server thread so pending IN transfers can complete */
+        uint64_t event = 1;
+        if (write(ep_data_event_fd, &event, sizeof(event)) < 0) {
+            /* Counter is already non-zero, the server will wake anyway */
+        }
     }
 }
+
 void usbip_device_critical_section_enter(void) {
     pthread_mutex_lock(&receive_lock);
 }
@@ -83,37 +107,35 @@ void usbip_device_critical_section_exit(void) {
     pthread_mutex_unlock(&receive_lock);
 }
 
-uint8_t *usbip_device_get_ep_buffer(uint8_t ep, size_t *buffer_size) {
-    uint8_t ep_masked = ep & 0xf;
-    uint8_t *buffer = NULL;
-    pthread_mutex_lock(&ep_access_mutex);
-    buffer = endpoint_data[ep_masked].data;
-    *buffer_size = endpoint_data[ep_masked].data_length;
-    pthread_mutex_unlock(&ep_access_mutex);
-    return buffer;
+int usbip_device_get_event_fd(void) {
+    return ep_data_event_fd;
 }
 
-void usbip_device_release_buffer(uint8_t ep) {
-    uint8_t ep_masked = ep & 0xf;
-    pthread_mutex_lock(&ep_access_mutex);
-    memset(endpoint_data[ep_masked].data, 0, ENDPOINT_MAX_DATA_LENGTH);
-    endpoint_data[ep_masked].data_length = 0;
-    pthread_mutex_unlock(&ep_access_mutex);
-    pthread_mutex_unlock(&endpoint_data[ep_masked].ep_lock);
+void usbip_device_clear_event(void) {
+    uint64_t event;
+    if (read(ep_data_event_fd, &event, sizeof(event)) < 0) {
+        /* No event pending */
+    }
 }
 
-void usbip_device_consume_buffer(uint8_t ep, size_t length) {
+size_t usbip_device_fetch_ep_data(uint8_t ep, uint8_t *buffer, size_t max_length) {
     uint8_t ep_masked = ep & 0xf;
     pthread_mutex_lock(&ep_access_mutex);
-    size_t remaining = endpoint_data[ep_masked].data_length;
-    remaining = (length < remaining) ? remaining - length : 0;
+    size_t available = endpoint_data[ep_masked].data_length;
+    size_t length = (max_length < available) ? max_length : available;
+    size_t remaining = available - length;
+    memcpy(buffer, endpoint_data[ep_masked].data, length);
+    if (ep_masked == 0) {
+        /* Control transfer is complete, drop anything beyond wLength */
+        remaining = 0;
+    }
     memmove(endpoint_data[ep_masked].data, &endpoint_data[ep_masked].data[length], remaining);
     endpoint_data[ep_masked].data_length = remaining;
-    pthread_mutex_unlock(&ep_access_mutex);
-
     if (remaining == 0) {
-        usbip_device_release_buffer(ep);
+        pthread_cond_broadcast(&ep_data_consumed);
     }
+    pthread_mutex_unlock(&ep_access_mutex);
+    return length;
 }
 
 void usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,

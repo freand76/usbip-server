@@ -88,7 +88,11 @@ bool usbip_server_start(const usbip_device_t *usb_device) {
 
     usbip_device = usb_device;
 
-    bool status = tcpip_server_open(USBIP_PORT);
+    bool status = usbip_device_init();
+
+    if (status) {
+        status = tcpip_server_open(USBIP_PORT);
+    }
 
     if (status) {
         int err = pthread_create(&thread_id, NULL, &usbip_server_worker_thread, NULL);

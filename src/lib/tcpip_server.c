@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -115,6 +116,19 @@ bool tcpip_server_wait_for_client(void) {
         setsockopt(client_socket, IPPROTO_TCP, TCP_KEEPCNT, &(int){KEEPALIVE_COUNT}, sizeof(int));
     }
     return status;
+}
+
+bool tcpip_server_wait_for_data(int wake_fd) {
+    struct pollfd fds[2] = {
+        {.fd = client_socket, .events = POLLIN},
+        {.fd = wake_fd, .events = POLLIN},
+    };
+
+    if (stop_server || (poll(fds, 2, READ_TIMEOUT_US / 1000) <= 0)) {
+        return false;
+    }
+    /* Errors and hang-ups also count, the following read will report them */
+    return (fds[0].revents != 0);
 }
 
 bool tcpip_server_read(void *buffer, size_t read_size) {
