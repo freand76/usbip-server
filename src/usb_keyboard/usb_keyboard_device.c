@@ -290,8 +290,8 @@ static void control_data(const uint8_t *setup, const uint8_t *data, size_t data_
             }
             usbip_device_transmit(0, usb_keyboard_hid_report, length);
         }
-    } else if ((bRequestType == 0x21) && (bRequest == USB_REQUEST_SET_CONFIGURATION)) {
-        // Set Configuration
-        configuration_active = true;
+    } else if ((bRequestType == 0x00) && (bRequest == USB_REQUEST_SET_CONFIGURATION)) {
+        // Set Configuration, configuration 0 means the host deconfigured the device
+        configuration_active = (setup[2] != 0);
     }
 }
