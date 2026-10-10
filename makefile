@@ -180,3 +180,14 @@ format:
 	@find src/. -iname *.h -o -name *.c | xargs clang-format -i
 	@find include/. -iname *.h  | xargs clang-format -i
 	git status
+
+
+###
+### CHECK THAT THE PYTHON TOOLS ARE FORMATTED AND LINT FREE WITH RUFF
+###
+
+check-python:
+	@echo "  Checking formatting of tools/"
+	$(VERBOSE)uvx ruff format --check tools
+	@echo "  Linting tools/"
+	$(VERBOSE)uvx ruff check tools

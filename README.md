@@ -126,6 +126,7 @@ $ make            # builds all examples into out/
 $ V=1 make        # show the full compiler command lines
 $ make clean      # remove out/
 $ make format     # format the sources with clang-format
+$ make check-python  # check formatting and lint of tools/ with ruff (needs uv)
 ```
 
 ## Example Devices

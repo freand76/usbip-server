@@ -36,22 +36,24 @@ intf = cfg[(0, 0)]
 epIn = usb.util.find_descriptor(
     intf,
     # match the first OUT endpoint
-    custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress)
-    == usb.util.ENDPOINT_IN,
+    custom_match=lambda e: (
+        usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
+    ),
 )
 
 epOut = usb.util.find_descriptor(
     intf,
     # match the first OUT endpoint
-    custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress)
-    == usb.util.ENDPOINT_OUT,
+    custom_match=lambda e: (
+        usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT
+    ),
 )
 
 assert epIn is not None
 assert epOut is not None
 
 # write data to USB device
-for idx in range(0, 5):
+for idx in range(5):
     test_str = f"Hello World {idx}, "
     epOut.write(test_str)
 
