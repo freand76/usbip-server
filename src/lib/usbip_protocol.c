@@ -69,7 +69,8 @@ static bool complete_pending_urbs(void);
 static void load_interrupt_intervals(const uint8_t *config_desc);
 static uint64_t now_us(void);
 static void remove_pending_urb(size_t idx);
-static bool transmit_ret_submit(uint32_t seqnum, int32_t urb_status, size_t tx_length);
+static bool transmit_ret_submit(uint32_t seqnum, int32_t urb_status, size_t actual_length,
+                                bool send_data);
 
 bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
     op_req_head_t req_head;
@@ -196,23 +197,27 @@ static bool process_submit(const usbip_device_t *usb_device, uint32_t seqnum, ui
             }
         }
         if (!supported) {
-            return transmit_ret_submit(seqnum, EP_STALL, 0);
+            return transmit_ret_submit(seqnum, EP_STALL, 0, false);
         }
-        return transmit_ret_submit(seqnum, 0, tx_length);
+        if (direction == 0) {
+            return transmit_ret_submit(seqnum, 0, transfer_buffer_length, false);
+        }
+        return transmit_ret_submit(seqnum, 0, tx_length, true);
     }
 
     if (direction == 0) {
         if ((transfer_buffer_length > 0) && (usb_device->ep_data_callback != NULL)) {
             usbip_device_receive(usb_device, ep, rx_buffer, transfer_buffer_length);
         }
-        return transmit_ret_submit(seqnum, 0, 0);
+        /* The host learns how much of its OUT data was accepted, all of it */
+        return transmit_ret_submit(seqnum, 0, transfer_buffer_length, false);
     }
 
     /* IN transfers stay pending until the device has data, like a NAK on a real bus */
     if (num_pending_urbs == MAX_PENDING_URBS) {
         fprintf(stderr, "USBIPProtocol: Too many pending transfers, completing %u without data\n",
                 seqnum);
-        return transmit_ret_submit(seqnum, 0, 0);
+        return transmit_ret_submit(seqnum, 0, 0, true);
     }
     pending_urbs[num_pending_urbs++] = (pending_urb_t){
         .seqnum = seqnum,
@@ -278,7 +283,7 @@ static bool complete_pending_urbs(void) {
         if (tx_length > 0) {
             ep_next_poll_us[ep] = now + ep_interval_us[ep];
             remove_pending_urb(idx);
-            status = transmit_ret_submit(urb.seqnum, 0, tx_length);
+            status = transmit_ret_submit(urb.seqnum, 0, tx_length, true);
         } else {
             idx++;
         }
@@ -317,7 +322,9 @@ static void remove_pending_urb(size_t idx) {
             (num_pending_urbs - idx) * sizeof(pending_urbs[0]));
 }
 
-static bool transmit_ret_submit(uint32_t seqnum, int32_t urb_status, size_t tx_length) {
+/* IN transfers send actual_length bytes of data, OUT transfers only report how much was accepted */
+static bool transmit_ret_submit(uint32_t seqnum, int32_t urb_status, size_t actual_length,
+                                bool send_data) {
     usbip_header_basic_t ret_header = {0};
     ret_header.command = SWAP32(USBIP_RET_SUBMIT);
     ret_header.seqnum = SWAP32(seqnum);
@@ -329,15 +336,15 @@ static bool transmit_ret_submit(uint32_t seqnum, int32_t urb_status, size_t tx_l
     if (status) {
         usbip_ret_submit_t ret_submit = {0};
         ret_submit.status = SWAP32((uint32_t)urb_status);
-        ret_submit.actual_length = SWAP32(tx_length);
+        ret_submit.actual_length = SWAP32(actual_length);
         ret_submit.start_frame = SWAP32(0);
         ret_submit.number_of_packets = SWAP32(0xffffffff);
         ret_submit.error_count = SWAP32(0);
         status = tcpip_server_write(&ret_submit, sizeof(ret_submit));
     }
 
-    if (status && (tx_length > 0)) {
-        status = tcpip_server_write(tx_buffer, tx_length);
+    if (status && send_data && (actual_length > 0)) {
+        status = tcpip_server_write(tx_buffer, actual_length);
     }
     return status;
 }
