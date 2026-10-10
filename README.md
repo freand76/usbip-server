@@ -138,12 +138,12 @@ how its code works and what to change for your own device.
 
 | Program | ID | What it does |
 |---|---|---|
-| [`out/usb_bulk_device`](docs/usb_bulk_device.md) | `fa00:c001` | Vendor class device with one bulk OUT and one bulk IN endpoint. Prints everything it receives and answers with `Message Counter: <n>`. |
-| [`out/usb_cdc_device`](docs/usb_cdc_device.md) | `fa00:0001` | CDC ACM serial port, shows up as `/dev/ttyACMx`. Sends `Tick <n>` twice a second while a terminal has the port open, and prints what you type. |
-| [`out/usb_mouse_device`](docs/usb_mouse_device.md) | `fa00:0002` | HID boot mouse that moves the pointer in a circle, one lap per second. |
-| [`out/usb_keyboard_device`](docs/usb_keyboard_device.md) | `fa00:0003` | HID boot keyboard that types `Who is typing...` one second after the host has configured it. |
-| [`out/usb_audio_input_device`](docs/usb_audio_input_device.md) | `fa00:0004` | USB Audio Class 1 microphone, 48 kHz 16 bit mono over an isochronous endpoint. While something records from it, it plays an alien pulse once a second. |
-| [`out/usb_gud_display_device`](docs/usb_gud_display_device.md) | `1d50:614d` | 320x240 RGB565 display using the GUD (Generic USB Display) protocol, shows up as a monitor. A window shows what the host draws on it. |
+| [`out/usb_bulk_device`](https://freand76.github.io/usbip-server/usb_bulk_device.html) | `fa00:c001` | Vendor class device with one bulk OUT and one bulk IN endpoint. Prints everything it receives and answers with `Message Counter: <n>`. |
+| [`out/usb_cdc_device`](https://freand76.github.io/usbip-server/usb_cdc_device.html) | `fa00:0001` | CDC ACM serial port, shows up as `/dev/ttyACMx`. Sends `Tick <n>` twice a second while a terminal has the port open, and prints what you type. |
+| [`out/usb_mouse_device`](https://freand76.github.io/usbip-server/usb_mouse_device.html) | `fa00:0002` | HID boot mouse that moves the pointer in a circle, one lap per second. |
+| [`out/usb_keyboard_device`](https://freand76.github.io/usbip-server/usb_keyboard_device.html) | `fa00:0003` | HID boot keyboard that types `Who is typing...` one second after the host has configured it. |
+| [`out/usb_audio_input_device`](https://freand76.github.io/usbip-server/usb_audio_input_device.html) | `fa00:0004` | USB Audio Class 1 microphone, 48 kHz 16 bit mono over an isochronous endpoint. While something records from it, it plays an alien pulse once a second. |
+| [`out/usb_gud_display_device`](https://freand76.github.io/usbip-server/usb_gud_display_device.html) | `1d50:614d` | 320x240 RGB565 display using the GUD (Generic USB Display) protocol, shows up as a monitor. A window shows what the host draws on it. |
 
 *The mouse moves your real pointer and the keyboard types into whichever window has
 focus.*
