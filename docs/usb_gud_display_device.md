@@ -16,6 +16,12 @@ can extend onto it, and the device shows what the host draws in a window.
 The `gud` driver only binds to a few fixed vendor and product ids, so the display can
 not use the `fa00` vendor id of the other examples.
 
+*To use the display as a framebuffer, drawn on by `modetest`, `ffmpeg`, the tools in
+`tools/` or your own programs, install the udev rule
+[udev/71-gud-mutter-ignore.rules](../udev/71-gud-mutter-ignore.rules) first, see GNOME
+below. Without it GNOME takes the display over as a desktop monitor, and other programs
+can not show anything on it.*
+
 ## Try It
 
 The display is not part of `make`, since its window needs SDL3:
