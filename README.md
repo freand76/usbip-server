@@ -141,13 +141,14 @@ $ make format     # format the sources with clang-format
 focus.*
 
 To try the bulk device, attach it and run [tools/test_bulkio.py](tools/test_bulkio.py)
-(needs `pyusb`, and access to the device node, see
-[Accessing the Devices Without root](#accessing-the-devices-without-root)):
+with [uv](https://docs.astral.sh/uv/), which installs the script's Python dependencies by
+itself. The script needs access to the device node, see
+[Accessing the Devices Without root](#accessing-the-devices-without-root):
 
 ```
 $ out/usb_bulk_device &
 $ sudo usbip attach -r localhost -b 1-1
-$ python3 tools/test_bulkio.py
+$ uv run tools/test_bulkio.py
 ```
 
 ## Attaching and Detaching
