@@ -420,7 +420,3 @@ but it will probably not be updated...
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=freand76/usbip-server&type=Date)](https://star-history.com/#freand76/usbip-server&Date)
-
-## Todo
-
-- Implement more device examples
