@@ -34,6 +34,9 @@ static void control_data(const uint8_t *setup, const uint8_t *data, size_t data_
     if ((bRequestType == 0x81) && (bRequest == USB_REQUEST_GET_DESCRIPTOR)) {
         if (setup[3] == USB_DESCRIPTOR_TYPE_REPORT) {
             uint16_t length = setup[7] << 8 | setup[6];
+            if (length > sizeof(usb_mouse_hid_report)) {
+                length = sizeof(usb_mouse_hid_report);
+            }
             usbip_device_transmit(0, usb_mouse_hid_report, length);
         }
     }

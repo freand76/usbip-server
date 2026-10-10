@@ -100,6 +100,20 @@ void usbip_device_release_buffer(uint8_t ep) {
     pthread_mutex_unlock(&endpoint_data[ep_masked].ep_lock);
 }
 
+void usbip_device_consume_buffer(uint8_t ep, size_t length) {
+    uint8_t ep_masked = ep & 0xf;
+    pthread_mutex_lock(&ep_access_mutex);
+    size_t remaining = endpoint_data[ep_masked].data_length;
+    remaining = (length < remaining) ? remaining - length : 0;
+    memmove(endpoint_data[ep_masked].data, &endpoint_data[ep_masked].data[length], remaining);
+    endpoint_data[ep_masked].data_length = remaining;
+    pthread_mutex_unlock(&ep_access_mutex);
+
+    if (remaining == 0) {
+        usbip_device_release_buffer(ep);
+    }
+}
+
 void usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
                           size_t length) {
     uint8_t bmRequestType = setup[0];
@@ -156,9 +170,13 @@ static void device_request(const usbip_device_t *usb_device, uint8_t *setup, uin
             uint8_t bDescriptorType = setup[3];
             uint8_t bDescriptorIndex = setup[2];
             if (bDescriptorType == USB_DESCRIPTOR_TYPE_DEVICE) {
-                usbip_device_transmit(0, usb_device->device_desc, req_size);
+                size_t desc_length = usb_device->device_desc[0];
+                size_t tx_length = (req_size < desc_length) ? req_size : desc_length;
+                usbip_device_transmit(0, usb_device->device_desc, tx_length);
             } else if (bDescriptorType == USB_DESCRIPTOR_TYPE_CONFIGURATION) {
-                usbip_device_transmit(0, usb_device->config_desc, req_size);
+                size_t desc_length = (usb_device->config_desc[3] << 8) | usb_device->config_desc[2];
+                size_t tx_length = (req_size < desc_length) ? req_size : desc_length;
+                usbip_device_transmit(0, usb_device->config_desc, tx_length);
             } else if (bDescriptorType == USB_DESCRIPTOR_TYPE_STRING) {
                 if (bDescriptorIndex == 0) {
                     size_t tx_length = (req_size < usb_device->langid_desc[0])

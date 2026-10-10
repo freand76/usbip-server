@@ -124,9 +124,17 @@ bool usbip_protocol_process_imported_device(const usbip_device_t *usb_device) {
 
                 if (direction == 1) {
                     uint8_t *ep_buf = usbip_device_get_ep_buffer(ep, &tx_length);
+                    if (tx_length > transfer_buffer_length) {
+                        tx_length = transfer_buffer_length;
+                    }
                     if (tx_length > 0) {
                         memcpy(tx_buffer, ep_buf, tx_length);
-                        usbip_device_release_buffer(ep);
+                        if (ep == 0) {
+                            // Control transfer is complete, drop anything beyond wLength
+                            usbip_device_release_buffer(ep);
+                        } else {
+                            usbip_device_consume_buffer(ep, tx_length);
+                        }
                     } else {
                         // ret_status = EP_STALL;
                     }

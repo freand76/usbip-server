@@ -29,6 +29,8 @@ uint8_t *usbip_device_get_ep_buffer(uint8_t ep, size_t *buffer_size);
 
 void usbip_device_release_buffer(uint8_t ep);
 
+void usbip_device_consume_buffer(uint8_t ep, size_t length);
+
 void usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
                           size_t length);
 
