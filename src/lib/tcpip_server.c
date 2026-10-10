@@ -29,9 +29,14 @@
 #define ACCEPT_TIMEOUT_US (500000)
 #define READ_TIMEOUT_US (500000)
 
+/* Detect clients that vanish without closing the connection */
+#define KEEPALIVE_IDLE_S (10)
+#define KEEPALIVE_INTERVAL_S (5)
+#define KEEPALIVE_COUNT (3)
+
 static int server_socket = -1;
 static int client_socket = -1;
-static volatile bool stop_server = false;
+static volatile sig_atomic_t stop_server = false;
 
 bool tcpip_server_open(int port) {
     struct sockaddr_in addr;
@@ -103,6 +108,11 @@ bool tcpip_server_wait_for_client(void) {
     if (status) {
         tv.tv_usec = READ_TIMEOUT_US;
         setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof tv);
+        setsockopt(client_socket, SOL_SOCKET, SO_KEEPALIVE, &(int){1}, sizeof(int));
+        setsockopt(client_socket, IPPROTO_TCP, TCP_KEEPIDLE, &(int){KEEPALIVE_IDLE_S}, sizeof(int));
+        setsockopt(client_socket, IPPROTO_TCP, TCP_KEEPINTVL, &(int){KEEPALIVE_INTERVAL_S},
+                   sizeof(int));
+        setsockopt(client_socket, IPPROTO_TCP, TCP_KEEPCNT, &(int){KEEPALIVE_COUNT}, sizeof(int));
     }
     return status;
 }
@@ -112,9 +122,9 @@ bool tcpip_server_read(void *buffer, size_t read_size) {
     char *char_buffer = (char *)buffer;
     while (!stop_server && (length < read_size)) {
         int res = read(client_socket, &char_buffer[length], read_size - length);
-        if ((res == -1) && (errno == EAGAIN)) {
-            /* Timeout */
-            return false;
+        if ((res == -1) && ((errno == EAGAIN) || (errno == EINTR))) {
+            /* Timeout or signal, an idle client is not a lost client */
+            continue;
         } else if (res > 0) {
             length += res;
         } else {

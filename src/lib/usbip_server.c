@@ -45,6 +45,10 @@ static void int_handler(int unused) {
 
     if (keep_running > 0) {
         keep_running--;
+        if (keep_running == 0) {
+            /* Abort any blocking client read */
+            tcpip_server_stop();
+        }
     } else {
         panic_counter++;
         if (panic_counter == 5) {
