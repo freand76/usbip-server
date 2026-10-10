@@ -63,6 +63,7 @@ static void int_handler(int unused) {
 
 static void *usbip_server_worker_thread(void *arg) {
     (void)arg;
+    usbip_device_mark_server_thread();
     while (keep_running > 0) {
         if (!tcpip_server_wait_for_client()) {
             continue;

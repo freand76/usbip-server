@@ -50,6 +50,11 @@ static device_endpoint_data_t endpoint_data[NUMBER_OF_ENDPOINTS];
 static int ep_data_event_fd = -1;
 static uint8_t configuration_value = 0;
 
+/* The server thread fetches endpoint data, so neither it (where all device callbacks run) nor a
+   thread blocking it with a critical section may wait for the data to be fetched */
+static __thread bool is_server_thread = false;
+static __thread bool in_critical_section = false;
+
 static const char *get_string(const usbip_device_t *usb_device, uint8_t index);
 static bool device_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
                            size_t req_size);
@@ -81,38 +86,58 @@ void usbip_device_receive(const usbip_device_t *usb_device, uint8_t ep, uint8_t 
     pthread_mutex_unlock(&receive_lock);
 }
 
-void usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length) {
+void usbip_device_mark_server_thread(void) {
+    is_server_thread = true;
+}
+
+bool usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length) {
     uint8_t ep_masked = ep & 0xf;
     if (data_length > ENDPOINT_MAX_DATA_LENGTH) {
         data_length = ENDPOINT_MAX_DATA_LENGTH;
     }
 
+    /* Control replies are complete when the request returns and may replace older data */
+    bool replace = (ep_masked == 0);
+    bool may_wait = !is_server_thread && !in_critical_section;
+    bool stored = false;
+
     pthread_mutex_lock(&ep_access_mutex);
-    /* Wait for the host to fetch earlier data, control replies are
-       produced by the server thread itself and must never wait */
-    while ((ep_masked != 0) && !device_stopped && (endpoint_data[ep_masked].data_length > 0)) {
+    /* Wait for the host to fetch earlier data */
+    while (!replace && may_wait && !device_stopped && (endpoint_data[ep_masked].data_length > 0)) {
         pthread_cond_wait(&ep_data_consumed, &ep_access_mutex);
     }
-    if (!device_stopped) {
+    bool stopped = device_stopped;
+    if (!stopped && (replace || (endpoint_data[ep_masked].data_length == 0))) {
         memcpy(endpoint_data[ep_masked].data, data, data_length);
         endpoint_data[ep_masked].data_length = data_length;
+        stored = true;
     }
     pthread_mutex_unlock(&ep_access_mutex);
 
-    if (ep_masked != 0) {
+    if (!stored && !stopped) {
+        fprintf(stderr,
+                "USBIPDevice: EP%u still has unread data, dropped %zu bytes "
+                "(transmit can not wait in a callback or critical section)\n",
+                ep_masked, data_length);
+    }
+
+    if (stored && (ep_masked != 0)) {
         /* Wake the server thread so pending IN transfers can complete */
         uint64_t event = 1;
         if (write(ep_data_event_fd, &event, sizeof(event)) < 0) {
             /* Counter is already non-zero, the server will wake anyway */
         }
     }
+    return stored;
 }
 
 void usbip_device_critical_section_enter(void) {
     pthread_mutex_lock(&receive_lock);
+    in_critical_section = true;
 }
 
 void usbip_device_critical_section_exit(void) {
+    in_critical_section = false;
     pthread_mutex_unlock(&receive_lock);
 }
 

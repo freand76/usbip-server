@@ -15,6 +15,7 @@
 #ifndef USBIP_SERVER_API_H_
 #define USBIP_SERVER_API_H_
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -50,8 +51,13 @@ typedef struct {
 
 /**
  * @brief Transmit EP data from virtual device to host
+ *
+ * Waits until the host has fetched earlier data on the endpoint. In device callbacks and
+ * critical sections it can not wait, and drops the data if the endpoint still has unread data.
+ *
+ * @return true if the data was queued for the host
  */
-void usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length);
+bool usbip_device_transmit(uint8_t ep, const uint8_t *data, size_t data_length);
 
 /**
  * @brief Enter critical section
