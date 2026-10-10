@@ -329,6 +329,8 @@ static bool device_request(const usbip_device_t *usb_device, uint8_t *setup, uin
         }
     } else if (bRequest == USB_REQUEST_SET_CONFIGURATION) {
         configuration_value = setup[2];
+        /* Let the device know when the host has configured it */
+        control_callback(usb_device, setup, buffer, req_size);
     } else {
         printf("USBIPDevice: Unsupported bRequest: %.2x\n", bRequest);
         supported = false;

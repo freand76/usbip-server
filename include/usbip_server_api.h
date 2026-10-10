@@ -21,6 +21,9 @@
 
 /**
  * @brief Callback function type for USB EP0 control packets
+ *
+ * Receives class, vendor and interface requests. Also receives the standard SET_CONFIGURATION
+ * request (already handled), so the device knows when the host has configured it.
  */
 typedef void(control_data_func_t)(const uint8_t *setup, const uint8_t *data, size_t data_length);
 
