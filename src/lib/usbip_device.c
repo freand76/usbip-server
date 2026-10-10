@@ -31,6 +31,7 @@
 
 #define USB_REQUEST_RECIPIENT_DEVICE (0)
 #define USB_REQUEST_RECIPIENT_INTERFACE (1)
+#define USB_REQUEST_RECIPIENT_ENDPOINT (2)
 
 typedef struct {
         uint8_t data[ENDPOINT_MAX_DATA_LENGTH];
@@ -43,10 +44,12 @@ static pthread_cond_t ep_data_consumed = PTHREAD_COND_INITIALIZER;
 static bool device_stopped = false;
 static device_endpoint_data_t endpoint_data[NUMBER_OF_ENDPOINTS];
 static int ep_data_event_fd = -1;
+static uint8_t configuration_value = 0;
 
 static const char *get_string(const usbip_device_t *usb_device, uint8_t index);
-static void device_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
+static bool device_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
                            size_t req_size);
+static bool endpoint_request(uint8_t *usb_setup);
 static void interface_request(const usbip_device_t *usb_device, uint8_t *usb_setup, uint8_t *buffer,
                               size_t req_size);
 
@@ -138,22 +141,27 @@ size_t usbip_device_fetch_ep_data(uint8_t ep, uint8_t *buffer, size_t max_length
     return length;
 }
 
-void usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
+bool usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
                           size_t length) {
     uint8_t bmRequestType = setup[0];
     uint8_t bfType = (bmRequestType >> 5) & 0x03;
     uint8_t bfRecipient = bmRequestType & 0x1f;
 
+    bool supported = true;
     if (bfType != USB_REQUEST_TYPE_STANDARD) {
         /* Class or Vendor */
         usb_device->control_data_callback(setup, buffer, length);
     } else if (bfRecipient == USB_REQUEST_RECIPIENT_DEVICE) {
-        device_request(usb_device, setup, buffer, length);
+        supported = device_request(usb_device, setup, buffer, length);
     } else if (bfRecipient == USB_REQUEST_RECIPIENT_INTERFACE) {
         interface_request(usb_device, setup, buffer, length);
+    } else if (bfRecipient == USB_REQUEST_RECIPIENT_ENDPOINT) {
+        supported = endpoint_request(setup);
     } else {
         printf("USBIPDevice: Unknown bfRecipient = %x\n", bfRecipient);
+        supported = false;
     }
+    return supported;
 }
 
 //
@@ -177,9 +185,10 @@ static const char *get_string(const usbip_device_t *usb_device, uint8_t index) {
     return string;
 }
 
-static void device_request(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
+static bool device_request(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
                            size_t req_size) {
     (void)buffer;
+    bool supported = true;
 
     uint8_t bmRequestType = setup[0];
     uint8_t bRequest = setup[1];
@@ -231,10 +240,34 @@ static void device_request(const usbip_device_t *usb_device, uint8_t *setup, uin
                     }
                 }
             }
+        } else if (bRequest == USB_REQUEST_GET_CONFIGURATION) {
+            usbip_device_transmit(0, &configuration_value, sizeof(configuration_value));
         } else {
-            printf("USBIPDevice: Unknown bRequest: %.2x", bRequest);
+            printf("USBIPDevice: Unknown bRequest: %.2x\n", bRequest);
         }
+    } else if (bRequest == USB_REQUEST_SET_CONFIGURATION) {
+        configuration_value = setup[2];
+    } else {
+        printf("USBIPDevice: Unsupported bRequest: %.2x\n", bRequest);
+        supported = false;
     }
+    return supported;
+}
+
+static bool endpoint_request(uint8_t *setup) {
+    uint8_t bRequest = setup[1];
+    bool supported = true;
+    if (bRequest == USB_REQUEST_GET_STATUS) {
+        /* Endpoints are never halted */
+        uint8_t tx_buffer[2] = {0x00, 0x00};
+        usbip_device_transmit(0, tx_buffer, sizeof(tx_buffer));
+    } else if ((bRequest == USB_REQUEST_CLEAR_FEATURE) || (bRequest == USB_REQUEST_SET_FEATURE)) {
+        /* Accept halt requests, there is no halt state to change */
+    } else {
+        printf("USBIPDevice: Unsupported endpoint bRequest: %.2x\n", bRequest);
+        supported = false;
+    }
+    return supported;
 }
 
 static void interface_request(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,

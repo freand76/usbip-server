@@ -35,7 +35,8 @@ void usbip_device_clear_event(void);
 
 size_t usbip_device_fetch_ep_data(uint8_t ep, uint8_t *buffer, size_t max_length);
 
-void usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
+/* Returns false when the request is not supported and must be stalled */
+bool usbip_device_control(const usbip_device_t *usb_device, uint8_t *setup, uint8_t *buffer,
                           size_t length);
 
 #endif
