@@ -41,6 +41,32 @@ $ modetest -M gud -s 38:320x240@RG16 -F tiles,tiles
 
 Other fill patterns are `smpte`, `gradient`, `plain` and `noise`.
 
+## Drawing on the Display
+
+Without the desktop, programs can also draw through the display's framebuffer device,
+`/dev/fbN`. It belongs to the `video` group, add yourself with
+`sudo usermod -aG video $USER` and log in again.
+
+The kernel only shows the framebuffer once its mode has been set, so switch it on after
+each attach with [tools/fb_activate.py](../tools/fb_activate.py). It finds the GUD
+display's framebuffer by itself:
+
+```
+$ uv run tools/fb_activate.py
+/dev/fb1: 320x240, 16 bits per pixel, switched on
+```
+
+Then `ffmpeg` can draw on it, here a moving test pattern and a fractal zoom. Use the
+framebuffer the tool printed, and `rgb565le` for the display's RGB565 format:
+
+```
+$ ffmpeg -re -f lavfi -i testsrc2=size=320x240:rate=15 -pix_fmt rgb565le -f fbdev /dev/fb1
+$ ffmpeg -re -f lavfi -i mandelbrot=size=320x240:rate=15 -pix_fmt rgb565le -f fbdev /dev/fb1
+```
+
+The framebuffer only shows while no other program, like `modetest` or the desktop,
+drives the display.
+
 ## GNOME
 
 *On GNOME, attaching the display again after it was detached can make GNOME Shell crash
