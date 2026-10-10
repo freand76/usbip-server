@@ -26,6 +26,9 @@ bool usbip_device_init(void);
 /* Must be called from the thread that serves the client */
 void usbip_device_mark_server_thread(void);
 
+/* Return to the state of a freshly attached device, like a USB bus reset */
+void usbip_device_reset(void);
+
 void usbip_device_stop(void);
 
 void usbip_device_receive(const usbip_device_t *usb_device, uint8_t ep, uint8_t *data,

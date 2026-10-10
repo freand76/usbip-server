@@ -69,6 +69,17 @@ bool usbip_device_init(void) {
     return (ep_data_event_fd >= 0);
 }
 
+void usbip_device_reset(void) {
+    pthread_mutex_lock(&ep_access_mutex);
+    for (size_t idx = 0; idx < NUMBER_OF_ENDPOINTS; idx++) {
+        endpoint_data[idx].data_length = 0;
+    }
+    configuration_value = 0;
+    pthread_cond_broadcast(&ep_data_consumed);
+    pthread_mutex_unlock(&ep_access_mutex);
+    usbip_device_clear_event();
+}
+
 void usbip_device_stop(void) {
     pthread_mutex_lock(&ep_access_mutex);
     device_stopped = true;

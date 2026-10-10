@@ -93,8 +93,11 @@ bool usbip_protocol_process_cmd(const usbip_device_t *usb_device) {
                 /* The client is not required to NUL terminate the bus id */
                 printf("USBIPProtocol: USBIP_CMD_REQ_DEV_IMPORT '%.*s'\n", (int)sizeof(busid_str),
                        busid_str);
+                /* A new host starts with a freshly reset device */
                 num_pending_urbs = 0;
+                wait_timeout_us = WAIT_TIMEOUT_US;
                 load_interrupt_intervals(usb_device->config_desc);
+                usbip_device_reset();
                 device_imported = transmit_import_response(usb_device);
             }
             break;
