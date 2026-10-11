@@ -2,14 +2,13 @@
  usbip-server - a platform for USB device prototyping
 
  Fredrik Andersson
- Copyright 2026, All Rights Reserved.
+ Copyright 2026
 
- This software may be used by anyone for any reason so
- long as the copyright notice in the source files
- remains intact.
+ SPDX-License-Identifier: MIT
+ See the LICENSE file in the repository.
 
  code repository located at:
-        http://github.com/freand76/usbip-server
+        https://github.com/freand76/usbip-server
 ********************************************************/
 
 #include <stdio.h>

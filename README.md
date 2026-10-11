@@ -417,6 +417,10 @@ The code in **src/** is a C implementation of a C++ version I did back in 2016.
 The C++ version is still available in the **cpp_version** branch in the **cpp/** folder,
 but it will probably not be updated...
 
+## License
+
+MIT, see [LICENSE](LICENSE).
+
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=freand76/usbip-server&type=Date)](https://star-history.com/#freand76/usbip-server&Date)
