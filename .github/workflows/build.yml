@@ -8,10 +8,38 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: make
       run: make
+
+  gud-display:
+    # SDL3 is packaged from Ubuntu 25.04 on
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install SDL3
+      run: apt-get update && apt-get install -y --no-install-recommends build-essential pkg-config libsdl3-dev
+    - name: make gud_display
+      run: make gud_display
+
+  format:
+    # The same clang-format version as the development machines
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install clang-format
+      run: apt-get update && apt-get install -y --no-install-recommends make clang-format findutils
+    - name: make check-format
+      run: make check-format
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: astral-sh/setup-uv@v6
+    - name: make check-python
+      run: make check-python
