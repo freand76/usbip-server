@@ -44,7 +44,8 @@ descriptors and endpoint callbacks over USB/IP on TCP port 3240, and the Linux
   `make`, so it must not need extra packages.
 - `make gud_display` builds the GUD display, which needs SDL3 (`libsdl3-dev`). Keep it
   out of `all`.
-- `make format` runs clang-format on the C code. Run it before committing C changes.
+- `make format` runs clang-format on the C code. Run it before committing C changes;
+  `make check-format` only checks, as CI does.
 - `make check-python` runs `uvx ruff format --check` and `uvx ruff check` on `tools/`.
 - After pushing, check CI with `gh run list`.
 

@@ -236,6 +236,10 @@ format:
 ### CHECK THAT THE PYTHON TOOLS ARE FORMATTED AND LINT FREE WITH RUFF
 ###
 
+check-format:
+	@echo "  Checking formatting of src/ and include/"
+	$(VERBOSE)find src include -name '*.h' -o -name '*.c' | xargs clang-format --dry-run --Werror
+
 check-python:
 	@echo "  Checking formatting of tools/"
 	$(VERBOSE)uvx ruff format --check tools

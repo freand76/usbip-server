@@ -136,6 +136,7 @@ $ make            # builds all examples into out/
 $ V=1 make        # show the full compiler command lines
 $ make clean      # remove out/
 $ make format     # format the sources with clang-format
+$ make check-format  # check the C sources against .clang-format without changing them
 $ make gud_display   # the GUD display example, needs SDL3 (libsdl3-dev)
 $ make check-python  # check formatting and lint of tools/ with ruff (needs uv)
 ```
