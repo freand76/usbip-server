@@ -78,6 +78,8 @@ $ uv run tools/fb_animation.py
 $ uv run tools/fb_animation.py --effect tunnel --fps 20
 ```
 
+![Plasma, tunnel and fire effects on the display](images/gud_display_demo.gif)
+
 The framebuffer only shows while no other program, like `modetest` or the desktop,
 drives the display.
 

@@ -19,6 +19,15 @@ usb 5-1: Manufacturer: Virtual UsbIP
 cdc_acm 5-1:1.0: ttyACM0: USB ACM device
 ```
 
+<p align="center">
+  <img src="docs/images/gud_display_demo.gif" width="480"
+       alt="Plasma, tunnel and fire effects drawn on the emulated GUD display">
+</p>
+
+*The [GUD display example](https://freand76.github.io/usbip-server/usb_gud_display_device.html)
+is a monitor for Linux. Here `tools/fb_animation.py` draws on it, recorded from the
+display's framebuffer.*
+
 ### Why
 
 Developing a USB device usually means a microcontroller board, a programmer, and a
