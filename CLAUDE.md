@@ -40,8 +40,9 @@ descriptors and endpoint callbacks over USB/IP on TCP port 3240, and the Linux
 
 ## Build and Check
 
-- `make` builds the library and all examples except the GUD display. CI runs only
-  `make`, so it must not need extra packages.
+- `make` builds the library and all examples except the GUD display. It must not need
+  extra packages. CI also builds the GUD display and runs the format and Python checks
+  in separate jobs.
 - `make gud_display` builds the GUD display, which needs SDL3 (`libsdl3-dev`). Keep it
   out of `all`.
 - `make format` runs clang-format on the C code. Run it before committing C changes.
