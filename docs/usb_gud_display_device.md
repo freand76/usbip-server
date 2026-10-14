@@ -151,7 +151,7 @@ Display: 3 updates, 153600 bytes, last 320x36 at 0,204, 0 errors
 Resolution, pixel formats, buffer size and compression are set at the top of
 [usb_gud_display_descriptors.h](https://github.com/freand76/usbip-server/blob/main/src/usb_gud_display/usb_gud_display_descriptors.h).
 The window can show every format of 8 bits per pixel or more. LZ4 compression is not
-implemented yet; the place to decompress is marked in `endpoint_data()`.
+implemented yet, but the place to decompress is marked in `endpoint_data()`.
 
 ## Troubleshooting
 

@@ -9,9 +9,9 @@ Ask questions and share devices you built in
 [Discussions](https://github.com/freand76/usbip-server/discussions). Use
 [issues](https://github.com/freand76/usbip-server/issues) for bugs, and include:
 
-- the device program and how you attached it;
-- the device's output and `journalctl -k` from the attach;
-- your distribution and kernel version (`uname -r`).
+- the device program and how you attached it
+- the device's output and `journalctl -k` from the attach
+- your distribution and kernel version (`uname -r`)
 
 ## Pull Requests
 
@@ -33,13 +33,13 @@ Ask questions and share devices you built in
 
 A new device needs:
 
-- a folder `src/usb_<name>/` with `usb_<name>_device.c` and its descriptors, and an
+- A folder `src/usb_<name>/` with `usb_<name>_device.c` and its descriptors, and an
   entry in `TARGETS` in the makefile so `make` builds `out/usb_<name>_device`. A device
   that needs extra libraries gets its own make target, like `make gud_display`, so the
-  default build stays dependency free;
-- vendor id `0xfa00` with an unused product id, unless a kernel driver only binds
-  by id;
-- a page `docs/usb_<name>_device.md`, listed in `docs/index.md` and in the
+  default build stays dependency free.
+- Vendor id `0xfa00` with an unused product id, unless a kernel driver only binds
+  by id.
+- A page `docs/usb_<name>_device.md`, listed in `docs/index.md` and in the
   README's examples table.
 
 By contributing you agree that your contribution is licensed under the

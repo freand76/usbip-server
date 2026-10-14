@@ -23,7 +23,7 @@ $ sudo usbip attach -r localhost -b 1-1
 ```
 
 Click into an empty editor window before the attach completes. A second later
-`Who is typing...` appears. The keyboard types once per attach; detach with
+`Who is typing...` appears. The keyboard types once per attach. Detach with
 `sudo usbip detach -p 0` and attach again to type again.
 
 ## What You See

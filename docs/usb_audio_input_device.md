@@ -36,7 +36,7 @@ $ aplay alien.wav
 
 Or play it live on the speakers with [tools/audio_loopback.py](https://github.com/freand76/usbip-server/blob/main/tools/audio_loopback.py),
 which works with both PulseAudio and PipeWire. Start it before or after attaching the
-device; it plays the input until Ctrl-C, stops when the device is detached and starts
+device. It plays the input until Ctrl-C, stops when the device is detached and starts
 again when it is attached:
 
 ```
@@ -87,7 +87,7 @@ Recording stopped
 
 Start here for any streaming device: microphones, sound cards, sensors that sample
 continuously. Change the sample rate or channel count in the descriptors and the packet
-size follows; return the samples of your own signal from `iso_in_data()`.
+size follows. Return the samples of your own signal from `iso_in_data()`.
 
 ## Troubleshooting
 
