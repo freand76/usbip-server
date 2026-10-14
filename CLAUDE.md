@@ -1,4 +1,4 @@
-g# CLAUDE.md
+# CLAUDE.md
 
 A USB/IP server for prototyping USB devices in user space. A device program serves its
 descriptors and endpoint callbacks over USB/IP on TCP port 3240, and the Linux
