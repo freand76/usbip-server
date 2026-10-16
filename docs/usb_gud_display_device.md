@@ -153,6 +153,12 @@ Resolution, pixel formats, buffer size and compression are set at the top of
 The window can show every format of 8 bits per pixel or more. LZ4 compression is not
 implemented yet, but the place to decompress is marked in `endpoint_data()`.
 
+## On Real Hardware
+
+[stm32-usb-gud-display](https://github.com/freand76/stm32-usb-gud-display) is this
+display as firmware for an STM32F746G-Discovery board. Its 480x272 LCD becomes a USB
+monitor for Linux, with the same protocol handling and the same GNOME workarounds.
+
 ## Troubleshooting
 
 - The window stays black: the desktop is not using the display. Wait about 10 seconds
